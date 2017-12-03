@@ -3,8 +3,8 @@
  * Firmware version and build date
  */
 
-#define BUILD_DATE  "20170509"
-#define FW_VERSION  "1.0.1"
+#define BUILD_DATE  __DATE__ " " __TIME__
+#define FW_VERSION  "1.1.0"
 #define FW_NAME     "wifilink"
 
 /*
@@ -15,6 +15,7 @@
 //#define PRIMO
 //#define UNOWIFIDEVED
 //#define UNOWIFI
+//#define GENERIC_ESP8266
 
 
 /*
@@ -53,7 +54,7 @@
   #define WIFI_LED 2
   #define SSIDNAME "Arduino-Primo"
 #elif defined(UNOWIFI)
-  //Arduino PRIMO configuration parameters
+  //Arduino UNOWIFI configuration parameters
   #define BOARDMODEL "UNOWIFI"
   #define ARDUINO_BOARD "unowifi"     //mdns
   #define ESP_CH_SPI
@@ -67,4 +68,11 @@
   #define BAUDRATE_COMMUNICATION 19200
   #define WIFI_LED 14
   #define SSIDNAME "Arduino-Uno-WiFi"
+#elif defined(GENERIC_ESP8266)
+  #define BOARDMODEL "GENERIC_ESP8266"
+  #define ARDUINO_BOARD "esp8266"   //mdns
+  #define ESP_CH_UART
+  #define BAUDRATE_COMMUNICATION 9600 // to start with SoftwareSerial, set 115200 for good connection
+  #define WIFI_LED 14
+  #define SSIDNAME "ESP8266-Module"
 #endif
