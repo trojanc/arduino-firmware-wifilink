@@ -66,7 +66,7 @@
   #define BOARDMODEL "UNOWIFIDEVED"
   #define ARDUINO_BOARD "unowifi"   //mdns
   #define ESP_CH_UART
-  #define BAUDRATE_COMMUNICATION 19200
+  #define BAUDRATE_COMMUNICATION 115200 // assuming use of Serial1
   #define WIFI_LED 14
   #define SSIDNAME "Arduino-Uno-WiFi"
 #elif defined(GENERIC_ESP8266)
