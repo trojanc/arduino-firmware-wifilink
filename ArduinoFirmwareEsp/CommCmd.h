@@ -1,4 +1,6 @@
 enum {
+  RESET_ESP_CMD   = 0x01,
+
 	SET_NET_CMD 		= 0x10,
 	SET_PASSPHRASE_CMD	= 0x11,
 	SET_KEY_CMD	        = 0x12,

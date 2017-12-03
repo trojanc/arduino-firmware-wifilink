@@ -60,6 +60,9 @@ void CommLgc::handle(){
 			process();
 			CommunicationInterface.write(_resPckt,transfer_size);
 			transfer_size = 0;		//reset transfer size
+			if (_reqPckt.tcmd == RESET_ESP_CMD) {
+			  ESP.reset();
+			}
 		}
 		else{
 			//TODO
@@ -82,6 +85,7 @@ void CommLgc::process(){
 		_resPckt[1] = _reqPckt.tcmd | REPLY_FLAG;
 
 		switch(_reqPckt.tcmd){
+      case RESET_ESP_CMD:         resetESP();       break;
 			case SET_NET_CMD:						begin(0);					break;
 			case SET_PASSPHRASE_CMD:		begin(1);					break;
 			case SET_IP_CONFIG_CMD:			config();					break;
@@ -120,6 +124,19 @@ void CommLgc::process(){
 }
 
 /* Commands Functions */
+
+void CommLgc::resetESP() {
+  int resp_idx = 2;
+  bool result = true;
+  // no action - reset is in handle() after sending the response
+  //set the response struct
+  _resPckt[resp_idx++] = PARAM_NUMS_1;
+  _resPckt[resp_idx++] = PARAM_SIZE_1;
+  _resPckt[resp_idx++] = result;
+  _resPckt[resp_idx++] = END_CMD;
+  transfer_size = resp_idx;
+}
+
 /* WiFi Base */
 void CommLgc::getRSSI(uint8_t current){
 

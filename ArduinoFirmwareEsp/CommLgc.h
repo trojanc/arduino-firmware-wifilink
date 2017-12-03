@@ -50,6 +50,8 @@ private:
 	void createErrorResponse();
 	void process();
 
+  void resetESP();
+
 	/* WiFi Base */
 	void getCurrentSSID();
 	void getRSSI(uint8_t current);
