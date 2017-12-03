@@ -17,6 +17,7 @@
 //#define UNOWIFI
 //#define GENERIC_ESP8266
 
+//#define MCU_OTA
 
 /*
  * Enable/Disable Debug

@@ -24,6 +24,10 @@ ESP8266WebServer server(80);    //server UI
 
 void setup() {
 
+  #if defined(MCU_OTA)
+  _setup_dfu();
+  #endif
+
   pinMode(WIFI_LED, OUTPUT);      //initialize wifi LED
   digitalWrite(WIFI_LED, LOW);
   ArduinoOTA.begin();             //OTA ESP
@@ -42,6 +46,11 @@ void loop() {
   CommunicationLogic.handle();
   handleWebServer();
   wifiLed();
+
+  #if defined(MCU_OTA)
+  _handle_Mcu_OTA();
+  #endif
+
 
 }
 
