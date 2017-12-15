@@ -11,11 +11,16 @@
  * Define board model name
  */
 
-//#define STAROTTO
-//#define PRIMO
-//#define UNOWIFIDEVED
-//#define UNOWIFI
-//#define GENERIC_ESP8266
+#if defined(ARDUINO_ESP8266_ARDUINO_STAR_OTTO)
+#define STAROTTO
+#elif defined(ARDUINO_ESP8266_ARDUINO_PRIMO)
+#define PRIMO
+#elif defined(ARDUINO_ESP8266_ARDUINO_UNOWIFI)
+#define UNOWIFIDEVED
+//#define UNOWIFI // SPI version - not produced
+#else
+#define GENERIC_ESP8266
+#endif
 
 //#define MCU_OTA
 

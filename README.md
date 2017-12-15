@@ -26,8 +26,6 @@ Open or extract the downloaded zip and copy the folder ArduinoFirmwareEsp from z
 
 Start Arduino IDE and open the ArduinoFirmwareEsp.ino sketch. It opens additional files as tabs in IDE.
 
-Go to config.h tab and uncomment the `#define` for your board or GENERIC_ESP8266.
-
 ### Board selection and Verify
 
 In tools menu select board options and choose your board/shield/module or Generic ESP8266 from the ESP8266 section of the Boards menu. 
