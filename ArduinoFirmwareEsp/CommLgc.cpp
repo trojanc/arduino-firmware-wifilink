@@ -862,6 +862,12 @@ void CommLgc::getDataBuf(){
 	int result = 0;
 	uint8_t _sock = 0;
 	_sock = (uint8_t)_reqPckt.paramsData[PARAM_NUMS_0].data[PARAM_NUMS_0];
+  if (_reqPckt.nParam == 2) { // requested size
+    uint16_t size = ((uint16_t) _reqPckt.paramsData[1].data[0] << 8) + _reqPckt.paramsData[1].data[1];
+    if (size < bufferSize) {
+      bufferSize = size;
+    }
+  }
 
 	// if(bufferSize>RESPONSE_LENGHT-6)
 	// 	bufferSize= RESPONSE_LENGHT-6;																	//fix max length for UDP packet
@@ -885,7 +891,7 @@ void CommLgc::getDataBuf(){
     else if(mapWiFiClients[_sock]){
 
       uint8_t buffer_tcp[bufferSize+1];
-      result = mapWiFiClients[_sock].read(buffer_tcp, bufferSize);
+      bufferSize = mapWiFiClients[_sock].read(buffer_tcp, bufferSize);
 			//TODO need to add a buffer
       _resPckt[resp_idx++] = PARAM_NUMS_1;
 			_resPckt[resp_idx++] = (uint8_t)((bufferSize & 0xff00)>>8);//((uint8_t*)&bufferSize)[1];
@@ -894,7 +900,7 @@ void CommLgc::getDataBuf(){
 			resp_idx = resp_idx + bufferSize;
 			_resPckt[resp_idx++] = END_CMD;
 			transfer_size = resp_idx;
-
+			bufferSize = mapWiFiClients[_sock].available();
     }
 	}
 }
