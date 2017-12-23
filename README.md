@@ -58,6 +58,8 @@ Web Panel network configuration uses the configuration Access Point (AP). User c
 
 The AP network name is set as SSIDNAME in config.h. The WiFi Link fixed address in AP mode is http://192.168.240.1/.
 
+Warning: If you connect from sketch with WiFi.begin(ssid, pass), it changes the settings for the STA mode of the esp8266 for the Web Panel too. If you connect from sketch to unaccesible network or with wrong password, the Web Panel will not be accessible in STA mode.
+
 ### OTA upload 
 
 The WiFi Link firmware supports OTA upload of new version of the firmware binary. OTA upload will only work if some version of WiFi Link is working in the ESP8266 and is configured to STA or STA+AP mode.
@@ -72,9 +74,9 @@ OTA upload works with SPIFS too and is fast.
 
 ### config.json
 
-WiFi Link firmware writes WiFi settings into SPIFFS file config.json. SPIFFS upload overrides the SPIFFS content and the setting are lost. After restart WiFi Link firmware goes to AP mode and you must once again connect to this AP, choose the WiFi network, enter the password and connect back to your WiFi. 
+WiFi Link firmware writes hostname and static IP settings into SPIFFS file config.json. SPIFFS upload overrides the SPIFFS content and the setting are lost. 
 
-If you often upload the SPIFFS, add your config.json file into data subfolder of the WiFi Link firmware source codes. The basic content is `{"ssid":"yourwifi","password":"yourpassword"}.` 
+If you have not default hostname or a static IP configured and you often upload the SPIFFS, download `http://<IP>/config.json` and add it to `data` subfolder of the WiFi Link firmware source codes. 
 
 ### Atmega sketch OTA upload support
 

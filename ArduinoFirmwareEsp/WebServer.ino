@@ -32,8 +32,6 @@ String getContentType(String filename){
 }
 
 bool handleFileRead(String path){
-  if (path.indexOf("config.json") >= 0)
-    return false;
   if(path.endsWith("/")) path += "index.html";
   String contentType = getContentType(path);
   File file = SPIFFS.open(path, "r");
@@ -172,6 +170,13 @@ void handleWebServer(){
   }
 }
 
+void clearStaticIP() {
+  dhcp = "on";
+  Config.setParam("staticIP", "0.0.0.0");
+  Config.setParam("netMask", "255.255.255.0");
+  Config.setParam("gatewayIP", "192.168.1.1");
+}
+
 void initWebServer(){
 
   tot = WiFi.scanNetworks();
@@ -247,9 +252,7 @@ void initWebServer(){
       newSSID_param = server.arg("essid");
       newPASSWORD_param = server.arg("passwd");
       server.send(200, "text/plain", "1");
-      //WiFi.begin(newSSID_param.c_str(),newPASSWORD_param.c_str());
-      Config.setParam("ssid", newSSID_param);
-      Config.setParam("password", newPASSWORD_param);
+      clearStaticIP();
       connect_wifi = true;
     });
 
@@ -292,13 +295,8 @@ void initWebServer(){
        }
        else {
          server.send(200, "text/plain",  "1");
-         Config.setParam("staticIP", "0.0.0.0");
-         Config.setParam("netMask", "255.255.255.0");
-         Config.setParam("gatewayIP", "192.168.1.1");
+         clearStaticIP();
          ESP.restart();
-         while ( WiFi.waitForConnectResult() != WL_CONNECTED ) {
-           delay ( 5000 );
-         }
        }
      });
 

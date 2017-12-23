@@ -35,8 +35,8 @@ void setup() {
   CommunicationLogic.begin();
   SPIFFS.begin();
   initHostname();
-  initWebServer();                 //UI begin
   setWiFiConfig();
+  initWebServer();                 //UI begin
 
 }
 
@@ -109,32 +109,25 @@ void wifiLed(){
 
 void setWiFiConfig(){
 
-  //set AP+STA mode
-  WiFi.mode(WIFI_AP_STA);
-
-  //set default AP
-  String mac = WiFi.macAddress();
-  String apSSID = String(SSIDNAME) + "-" + String(mac[9])+String(mac[10])+String(mac[12])+String(mac[13])+String(mac[15])+String(mac[16]);
-  char softApssid[18];
-  apSSID.toCharArray(softApssid, apSSID.length()+1);
-  //delay(1000);
-  WiFi.softAP(softApssid);
-  WiFi.softAPConfig(default_IP, default_IP, IPAddress(255, 255, 255, 0));   //set default ip for AP mode
-
+  //WiFi mode is remembered by the esp sdk
+  if (WiFi.getMode() != WIFI_STA) {
+  
+    //set default AP
+    String mac = WiFi.macAddress();
+    String apSSID = String(SSIDNAME) + "-" + String(mac[9])+String(mac[10])+String(mac[12])+String(mac[13])+String(mac[15])+String(mac[16]);
+    char softApssid[18];
+    apSSID.toCharArray(softApssid, apSSID.length()+1);
+    //delay(1000);
+    WiFi.softAP(softApssid);
+    WiFi.softAPConfig(default_IP, default_IP, IPAddress(255, 255, 255, 0));   //set default ip for AP mode
+  }
   //set STA mode
   #if defined(ESP_CH_SPI)
   ETS_SPI_INTR_DISABLE();
   #endif
-  String ssid = Config.getParam("ssid").c_str();
-  if(ssid != ""){
-    String password = Config.getParam("password").c_str();
-    if(password != ""){
-      WiFi.begin(ssid.c_str(),password.c_str());
-    }else{
-      WiFi.begin(Config.getParam("ssid").c_str());
-    }
+  { // first static config if configured
     String staticIP = Config.getParam("staticIP").c_str();
-    if(staticIP != "" && staticIP != "0.0.0.0"){
+    if (staticIP != "" && staticIP != "0.0.0.0") {
       dhcp = "off";
       staticIP_param = staticIP;
       netmask_param = Config.getParam("netMask").c_str();
@@ -142,7 +135,13 @@ void setWiFiConfig(){
       WiFi.config(stringToIP(staticIP_param), stringToIP(gateway_param), stringToIP(netmask_param));
     }
   }
-
+  
+  WiFi.begin(); // connect to AP with credentials remembered by esp sdk
+  if (WiFi.waitForConnectResult() != WL_CONNECTED && WiFi.getMode() == WIFI_STA) { 
+    // if STA didn't connect, start AP
+    WiFi.mode(WIFI_AP_STA); // STA must be active for library connects
+    setWiFiConfig(); // setup AP
+  }
   #if defined(ESP_CH_SPI)
   ETS_SPI_INTR_ENABLE();
   #endif
