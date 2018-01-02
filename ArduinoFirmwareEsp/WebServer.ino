@@ -156,6 +156,7 @@ void handleWebServer(){
   if(connect_wifi){
     ETS_SPI_INTR_DISABLE();
     WiFi.begin(newSSID_param.c_str(),newPASSWORD_param.c_str());
+    delay(500);  // VB: exactly 500, and here!
     connect_wifi = false;
     ETS_SPI_INTR_ENABLE();
   }
@@ -308,20 +309,22 @@ void initWebServer(){
             boardInfo["name"] = "Primo";
             boardInfo["icon"] = "/img/logoPrimo.ico";
             boardInfo["logo"] = "/img/logoPrimo.png";
-            boardInfo["link"] = "http://www.arduino.org/learning/getting-started/getting-started-with-arduino-primo";
         }
         else if (BOARDMODEL == "STAROTTO"){
             boardInfo["name"] = "Star Otto";
             boardInfo["icon"] = "/img/logoOtto.ico";
             boardInfo["logo"] = "/img/logoOtto.png";
-            boardInfo["link"] = "http://www.arduino.org/learning/getting-started/getting-started-with-arduino-star-otto";
         }
         else if (BOARDMODEL =="UNOWIFIDEVED"){
             boardInfo["name"] = "Uno WiFi";
             boardInfo["icon"] = "/img/logoUnoWiFi.ico";
             boardInfo["logo"] = "/img/logoUnoWiFi.png";
-            boardInfo["link"] = "http://www.arduino.org/learning/getting-started/getting-started-with-arduino-uno-wifi";
+        } else {
+          boardInfo["name"] = "WiFi Link";
+          boardInfo["icon"] = "/img/logoUnoWiFi.ico";
+          boardInfo["logo"] = "/img/logoUnoWiFi.png";
         }
+        boardInfo["link"] = "https://github.com/jandrassy/arduino-library-wifilink#wifi-link-library";
          
         boardInfo["fw_name"] = FW_NAME;
         boardInfo["fw_version"] = FW_VERSION;
@@ -339,5 +342,5 @@ void initWebServer(){
     });
 
     server.begin();
-
+    delay(5); // VB: exactly 5, no more or less, no yield()!
 }

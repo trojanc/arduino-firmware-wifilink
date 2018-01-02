@@ -97,7 +97,7 @@ function scanAPs() {
     $("#spinner").removeAttribute("hidden");
     window.scrollTo(0, 0);
     if (blockScan) {
-        scanTimeout = window.setTimeout(scanAPs, 1000);
+        scanTimeout = window.setTimeout(scanAPs, 1500);
         return
     }
     ajaxReq("GET", "wifi/netNumber", function (a){
@@ -198,7 +198,7 @@ function changeWifiAp(d) {
         }, function (i, h) {
             showWarning("Error switching network: " + h);
             a.className = g;
-            window.setTimeout(scanAPs, 1000)
+			blockScan = 0;
         })
     }
 }
@@ -224,7 +224,7 @@ function changeSpecial(c) {
         }, function (f, d) {
             showWarning("Error: " + d);
             removeClass(a, "pure-button-disabled");
-            getWifiInfo()
+            getWifiInfo();
         })
     }
 }
