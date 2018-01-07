@@ -3,15 +3,40 @@
 #include "utility/wifi_utils.h"
 #include "SPISlave.h"
 
-uint8_t raw_pckt[SPI_BUFFER_SIZE];													//SPI buffer (limited to 128 bytes)
-//String raw_pckt_serial;
-uint8_t data_received_size = 0;													//check received data (maximum 128 byte (4 * 32))
-bool req_send = false;																	//check data sent for lenght greater than 32 byte (SPI)
-bool processing= false;																	//check data ready to process (SPI)
-CommItf* This;																					//need for SPI event
+/**
+ * SPI buffer (limited to 128 bytes)
+ */
+uint8_t raw_pckt[SPI_BUFFER_SIZE];
 
-unsigned long _startMillis;															//need to Serial
-unsigned long _timeout = 1000; 													//1 Second Serial Timeout for Serial
+/**
+ * Check received data (maximum 128 byte (4 * 32))
+ */
+uint8_t data_received_size = 0;
+
+/**
+ * Check data sent for lenght greater than 32 byte (SPI)
+ */
+bool req_send = false;
+
+/**
+ * check data ready to process (SPI)
+ */
+bool processing= false;
+
+/**
+ * need for SPI event
+ */
+CommItf* This;
+
+/**
+ * need to Serial
+ */
+unsigned long _startMillis;
+
+/**
+ * 1 Second Serial Timeout for Serial
+ */
+unsigned long _timeout = 1000;
 
 CommItf::CommItf(){
 }
@@ -109,11 +134,6 @@ void CommItf::write(uint8_t* _pckt,int transfer_size){
 		SPISlaveWrite(_pckt,transfer_size);
 		#endif
 }
-
-// void CommItf::end(){
-// 	if(CommChannel == CH_SERIAL)
-// 		Serial.end();
-// }
 
 /** Private Functions **/
 

@@ -50,7 +50,7 @@ private:
 	void createErrorResponse();
 	void process();
 
-  void resetESP();
+	void resetESP();
 
 	/* WiFi Base */
 	void getCurrentSSID();
@@ -71,12 +71,12 @@ private:
 	void getNetworkData();
 
 	/* WiFi Server */
-  void startServer();
+	void startServer();
 	void availData();
 	void serverStatus();
 	void getData();
-  void sendData();
-  void checkDataSent();
+	void sendData();
+	void checkDataSent();
 
 	/* WiFi Client */
 	void startClient();

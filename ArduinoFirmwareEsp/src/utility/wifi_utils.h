@@ -27,47 +27,47 @@
 
 #include <inttypes.h>
 
-#define CMD_FLAG          0
-#define REPLY_FLAG        1<<7
-#define DATA_FLAG 		    0x40
+#define CMD_FLAG		  0
+#define REPLY_FLAG		1<<7
+#define DATA_FLAG 			0x40
 
-#define WIFI_SPI_ACK      1
-#define WIFI_SPI_ERR      0xFF
+#define WIFI_SPI_ACK	  1
+#define WIFI_SPI_ERR	  0xFF
 
-//#define TIMEOUT_CHAR      1000
+//#define TIMEOUT_CHAR	  1000
 
 #define	MAX_SOCK_NUMBER   4	/**< Maxmium number of socket  */
 #define NO_SOCKET_AVAIL   255
 
-#define START_CMD         0xE0
-#define END_CMD           0xEE
-#define ERR_CMD   	      0xEF
+#define START_CMD		 0xE0
+#define END_CMD		   0xEE
+#define ERR_CMD   		  0xEF
 
 #define RESPONSE_LENGHT   384   //array for response length
 
 #define SPI_BUFFER_SIZE   128
-#define SPI_DATA_READY    1
+#define SPI_DATA_READY	1
 #define SPI_DATA_RECEIVED 2
-#define SLAVE_READY_PIN     5
+#define SLAVE_READY_PIN	 5
 
 enum numParams{
-    PARAM_NUMS_0 = 0,
-    PARAM_NUMS_1,
-    PARAM_NUMS_2,
-    PARAM_NUMS_3,
-    PARAM_NUMS_4,
-    PARAM_NUMS_5,
-    MAX_PARAM_NUMS
+	PARAM_NUMS_0 = 0,
+	PARAM_NUMS_1,
+	PARAM_NUMS_2,
+	PARAM_NUMS_3,
+	PARAM_NUMS_4,
+	PARAM_NUMS_5,
+	MAX_PARAM_NUMS
 };
 
 enum sizeParams{
-    PARAM_SIZE_0 = 0,
-    PARAM_SIZE_1,
-    PARAM_SIZE_2,
-    PARAM_SIZE_3,
-    PARAM_SIZE_4,
-    PARAM_SIZE_5,
-    PARAM_SIZE_6
+	PARAM_SIZE_0 = 0,
+	PARAM_SIZE_1,
+	PARAM_SIZE_2,
+	PARAM_SIZE_3,
+	PARAM_SIZE_4,
+	PARAM_SIZE_5,
+	PARAM_SIZE_6
 };
 
 
@@ -79,14 +79,14 @@ typedef struct  __attribute__((__packed__))
 	uint8_t	paramLen;
 	uint8_t	param[128];
 	//String	param;
-  //char*	param;
+	//char*	param;
 }	tParam;
 
 typedef struct  __attribute__((__packed__))
 {
 	uint16_t	dataLen;
 	uint8_t		data[128];
-  //char* data;
+	//char* data;
 } tDataParam;
 
 typedef struct  __attribute__((__packed__))

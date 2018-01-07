@@ -32,18 +32,40 @@ IPAddress* _handyIp;
 IPAddress* _handySubnet;
 IPAddress* _handyGateway;
 
-uint8_t tcpResult = 0;											//used by availData function
-uint16_t bufferSize = 0;													//used by getDataBuf function
-uint8_t numNets;														//number of networks scanned
+/**
+ * Used by availData function
+ */
+uint8_t tcpResult = 0;
+
+/**
+ * used by getDataBuf function
+ */
+uint16_t bufferSize = 0;
+
+/**
+ * number of networks scanned
+ */
+uint8_t numNets;
 
 //WiFiServer, WiFiClient and WiFiUDP map
 WiFiServer* mapWiFiServers[MAX_SOCK_NUMBER];
 WiFiClient mapWiFiClients[MAX_SOCK_NUMBER];
 WiFiUDP mapWiFiUDP[MAX_SOCK_NUMBER];
 
-tMsgPacket _reqPckt;                          //initialize struct to receive a command from MCU
-uint8_t _resPckt[RESPONSE_LENGHT];								//response array
-int transfer_size = 0;												//size of array response (length/32)
+/**
+ * initialize struct to receive a command from MCU
+ */
+tMsgPacket _reqPckt;
+
+/**
+ * response array
+ */
+uint8_t _resPckt[RESPONSE_LENGHT];
+
+/**
+ * size of array response (length/32)
+ */
+int transfer_size = 0;
 
 CommLgc::CommLgc(){
 }
@@ -61,7 +83,7 @@ void CommLgc::handle(){
 			CommunicationInterface.write(_resPckt,transfer_size);
 			transfer_size = 0;		//reset transfer size
 			if (_reqPckt.tcmd == RESET_ESP_CMD) {
-			  ESP.reset();
+				ESP.reset();
 			}
 		}
 		else{
@@ -85,40 +107,40 @@ void CommLgc::process(){
 		_resPckt[1] = _reqPckt.tcmd | REPLY_FLAG;
 
 		switch(_reqPckt.tcmd){
-      case RESET_ESP_CMD:         resetESP();       break;
-			case SET_NET_CMD:						begin(0);					break;
-			case SET_PASSPHRASE_CMD:		begin(1);					break;
-			case SET_IP_CONFIG_CMD:			config();					break;
-			case SET_DNS_CONFIG_CMD:		setDNS();					break;
+			case RESET_ESP_CMD:				resetESP();				break;
+			case SET_NET_CMD:				begin(0);				break;
+			case SET_PASSPHRASE_CMD:		begin(1);				break;
+			case SET_IP_CONFIG_CMD:			config();				break;
+			case SET_DNS_CONFIG_CMD:		setDNS();				break;
 			case GET_CONN_STATUS_CMD:		getStatus();			break;
-			case GET_IPADDR_CMD:				getNetworkData();	break;
-			case GET_MACADDR_CMD:				getMacAddress();	break;
-			case GET_CURR_SSID_CMD: 		getCurrentSSID();	break;
+			case GET_IPADDR_CMD:			getNetworkData();		break;
+			case GET_MACADDR_CMD:			getMacAddress();		break;
+			case GET_CURR_SSID_CMD: 		getCurrentSSID();		break;
 			case GET_CURR_BSSID_CMD:		getBSSID(1);			break;
 			case GET_CURR_RSSI_CMD:			getRSSI(1);				break;
-			case GET_CURR_ENCT_CMD:			getEncryption(1);	break;
-			case SCAN_NETWORKS:					scanNetwork();		break;
-			case START_SERVER_TCP_CMD:	startServer();		break;
-			case GET_STATE_TCP_CMD:			serverStatus();		break;
-			case DATA_SENT_TCP_CMD:			checkDataSent();	break;
+			case GET_CURR_ENCT_CMD:			getEncryption(1);		break;
+			case SCAN_NETWORKS:				scanNetwork();			break;
+			case START_SERVER_TCP_CMD:		startServer();			break;
+			case GET_STATE_TCP_CMD:			serverStatus();			break;
+			case DATA_SENT_TCP_CMD:			checkDataSent();		break;
 			case AVAIL_DATA_TCP_CMD:		availData();			break;
 			case GET_DATA_TCP_CMD:			getData();				break;
-			case START_CLIENT_TCP_CMD:	startClient();		break;
+			case START_CLIENT_TCP_CMD:		startClient();			break;
 			case STOP_CLIENT_TCP_CMD:		stopClient();			break;
-			case GET_CLIENT_STATE_TCP_CMD:	clientStatus();	break;
-			case DISCONNECT_CMD:				disconnect();				break;
+			case GET_CLIENT_STATE_TCP_CMD:	clientStatus();			break;
+			case DISCONNECT_CMD:			disconnect();			break;
 			case GET_IDX_RSSI_CMD:			getRSSI(0);				break;
-			case GET_IDX_ENCT_CMD:			getEncryption(0);	break;
-			case REQ_HOST_BY_NAME_CMD:	reqHostByName();	break;
-			case GET_HOST_BY_NAME_CMD:	getHostByName();	break;
-			case GET_FW_VERSION_CMD:		getFwVersion();		break;
-			case START_SCAN_NETWORKS:		startScanNetwork();	break;
-			case SEND_DATA_UDP_CMD:			sendUdpData();		break;
+			case GET_IDX_ENCT_CMD:			getEncryption(0);		break;
+			case REQ_HOST_BY_NAME_CMD:		reqHostByName();		break;
+			case GET_HOST_BY_NAME_CMD:		getHostByName();		break;
+			case GET_FW_VERSION_CMD:		getFwVersion();			break;
+			case START_SCAN_NETWORKS:		startScanNetwork();		break;
+			case SEND_DATA_UDP_CMD:			sendUdpData();			break;
 			case GET_REMOTE_DATA_CMD:		remoteData();			break;
 			case SEND_DATA_TCP_CMD:			sendData();				break;
 			case GET_DATABUF_TCP_CMD:		getDataBuf();			break;
 			case INSERT_DATABUF_CMD:		insDataBuf();			break;
-			default:										createErrorResponse(); 		break;
+			default:						createErrorResponse(); 	break;
 		}
 	}
 }
@@ -126,15 +148,15 @@ void CommLgc::process(){
 /* Commands Functions */
 
 void CommLgc::resetESP() {
-  int resp_idx = 2;
-  bool result = true;
-  // no action - reset is in handle() after sending the response
-  //set the response struct
-  _resPckt[resp_idx++] = PARAM_NUMS_1;
-  _resPckt[resp_idx++] = PARAM_SIZE_1;
-  _resPckt[resp_idx++] = result;
-  _resPckt[resp_idx++] = END_CMD;
-  transfer_size = resp_idx;
+	int resp_idx = 2;
+	bool result = true;
+	// no action - reset is in handle() after sending the response
+	//set the response struct
+	_resPckt[resp_idx++] = PARAM_NUMS_1;
+	_resPckt[resp_idx++] = PARAM_SIZE_1;
+	_resPckt[resp_idx++] = result;
+	_resPckt[resp_idx++] = END_CMD;
+	transfer_size = resp_idx;
 }
 
 /* WiFi Base */
@@ -273,26 +295,26 @@ void CommLgc::begin(uint8_t idx){
 	uint8_t result;
 
 	if(idx == 0){ // if idx==0 connection without password
-			//retrieve parameters
-			char ssid[_reqPckt.params[PARAM_NUMS_0].paramLen+1];
-			//strncpy(ssid, _reqPckt.params[0].param, _reqPckt.params[0].paramLen);
-			memcpy(ssid, _reqPckt.params[PARAM_NUMS_0].param, _reqPckt.params[PARAM_NUMS_0].paramLen);
-			ssid[_reqPckt.params[PARAM_NUMS_0].paramLen] = '\0';
-			//set network and retrieve result
-			result = WiFi.begin(ssid);
+		//retrieve parameters
+		char ssid[_reqPckt.params[PARAM_NUMS_0].paramLen+1];
+		//strncpy(ssid, _reqPckt.params[0].param, _reqPckt.params[0].paramLen);
+		memcpy(ssid, _reqPckt.params[PARAM_NUMS_0].param, _reqPckt.params[PARAM_NUMS_0].paramLen);
+		ssid[_reqPckt.params[PARAM_NUMS_0].paramLen] = '\0';
+		//set network and retrieve result
+		result = WiFi.begin(ssid);
 	}
 	else{
-			//retrieve parameters
-			char ssid[_reqPckt.params[PARAM_NUMS_0].paramLen+1];
-			char pass[_reqPckt.params[PARAM_NUMS_1].paramLen+1];
-			//strncpy(ssid, _reqPckt.params[0].param, _reqPckt.params[0].paramLen);
-			//strncpy(pass, _reqPckt.params[1].param, _reqPckt.params[1].paramLen);
-			memcpy(ssid, _reqPckt.params[PARAM_NUMS_0].param, _reqPckt.params[PARAM_NUMS_0].paramLen);
-			memcpy(pass, _reqPckt.params[PARAM_NUMS_1].param, _reqPckt.params[PARAM_NUMS_1].paramLen);
-			ssid[_reqPckt.params[PARAM_NUMS_0].paramLen] = '\0';
-			pass[_reqPckt.params[PARAM_NUMS_1].paramLen] = '\0';
-			//set network and retrieve result
-			result = WiFi.begin(ssid, pass);
+		//retrieve parameters
+		char ssid[_reqPckt.params[PARAM_NUMS_0].paramLen+1];
+		char pass[_reqPckt.params[PARAM_NUMS_1].paramLen+1];
+		//strncpy(ssid, _reqPckt.params[0].param, _reqPckt.params[0].paramLen);
+		//strncpy(pass, _reqPckt.params[1].param, _reqPckt.params[1].paramLen);
+		memcpy(ssid, _reqPckt.params[PARAM_NUMS_0].param, _reqPckt.params[PARAM_NUMS_0].paramLen);
+		memcpy(pass, _reqPckt.params[PARAM_NUMS_1].param, _reqPckt.params[PARAM_NUMS_1].paramLen);
+		ssid[_reqPckt.params[PARAM_NUMS_0].paramLen] = '\0';
+		pass[_reqPckt.params[PARAM_NUMS_1].paramLen] = '\0';
+		//set network and retrieve result
+		result = WiFi.begin(ssid, pass);
 	}
 
 	//set the response struct
@@ -617,8 +639,6 @@ void CommLgc::availData(){
 	_resPckt[resp_idx++] = PARAM_NUMS_1;
 	_resPckt[resp_idx++] = PARAM_SIZE_2;
 	_resPckt[resp_idx++] = ((uint8_t*)&result)[0];
-	// _resPckt[4] = (uint8_t)((result & 0xff00)>>8);//((uint8_t*)&bufferSize)[1];
-	// _resPckt[5] = (uint8_t)(result & 0xff);
 	_resPckt[resp_idx++] = ((uint8_t*)&result)[1];
 	_resPckt[resp_idx++] = END_CMD;
 	transfer_size = resp_idx;
@@ -633,10 +653,10 @@ void CommLgc::serverStatus(){
 
 	//retrieve socket index
 	_sock = (uint8_t)_reqPckt.params[PARAM_NUMS_0].param[PARAM_NUMS_0];
-  if(mapWiFiServers[_sock] != NULL)
-	  result = mapWiFiServers[_sock]->status();
-  else
-    result =0;
+	if(mapWiFiServers[_sock] != NULL)
+		result = mapWiFiServers[_sock]->status();
+	else
+	result =0;
 	//set the response struct
 	_resPckt[resp_idx++] = PARAM_NUMS_1;
 	_resPckt[resp_idx++] = PARAM_SIZE_1;
@@ -692,7 +712,7 @@ void CommLgc::stopClient(){
 	uint8_t _sock = 0;
 	_sock = (uint8_t)_reqPckt.params[PARAM_NUMS_0].param[PARAM_NUMS_0];
 	if(_sock < MAX_SOCK_NUMBER){
-		if(mapWiFiClients[_sock]){  //!= NULL
+		if(mapWiFiClients[_sock]){	//!= NULL
 			mapWiFiClients[_sock].stop();
 			//mapWiFiClients[_sock] = NULL;
 			result = 1;
@@ -709,27 +729,26 @@ void CommLgc::stopClient(){
 	_resPckt[resp_idx++] = result;
 	_resPckt[resp_idx++] = END_CMD;
 	transfer_size = resp_idx;
-
 }
 
 void CommLgc::clientStatus(){
-  //TODO to be tested
+	//TODO to be tested
 	int resp_idx = 2;
-  uint8_t result = 0;
-  uint8_t _sock = 0; //socket index
-  _sock = (uint8_t)_reqPckt.params[PARAM_NUMS_0].param[PARAM_NUMS_0];
-  if(_sock < MAX_SOCK_NUMBER) {
+	uint8_t result = 0;
+	uint8_t _sock = 0; //socket index
+	_sock = (uint8_t)_reqPckt.params[PARAM_NUMS_0].param[PARAM_NUMS_0];
+	if(_sock < MAX_SOCK_NUMBER) {
 		if(!mapWiFiClients[_sock]){ //mapWiFiClients[_sock] == NULL
 			if(mapWiFiServers[_sock]!= NULL){
-        mapWiFiClients[_sock] = mapWiFiServers[_sock]->available(); //Create the client from the server [Arduino as a Server]
-        result = mapWiFiClients[_sock].status();
-      }
-    }else {
-      result = mapWiFiClients[_sock].status();
-    }
-  }
+		mapWiFiClients[_sock] = mapWiFiServers[_sock]->available(); //Create the client from the server [Arduino as a Server]
+		result = mapWiFiClients[_sock].status();
+		}
+	}else {
+		result = mapWiFiClients[_sock].status();
+	}
+	}
 
-  //set the response struct
+	//set the response struct
 	_resPckt[resp_idx++] = PARAM_NUMS_1;
 	_resPckt[resp_idx++] = PARAM_SIZE_1;
 	_resPckt[resp_idx++] = result;
@@ -862,38 +881,30 @@ void CommLgc::getDataBuf(){
 	int result = 0;
 	uint8_t _sock = 0;
 	_sock = (uint8_t)_reqPckt.paramsData[PARAM_NUMS_0].data[PARAM_NUMS_0];
-  if (_reqPckt.nParam == 2) { // requested size
-    uint16_t size = ((uint16_t) _reqPckt.paramsData[1].data[0] << 8) + _reqPckt.paramsData[1].data[1];
-    if (size < bufferSize) {
-      bufferSize = size;
-    }
-  }
+	if (_reqPckt.nParam == 2) { // requested size
+		uint16_t size = ((uint16_t) _reqPckt.paramsData[1].data[0] << 8) + _reqPckt.paramsData[1].data[1];
+		if (size < bufferSize) {
+			bufferSize = size;
+		}
+	}
 
-	// if(bufferSize>RESPONSE_LENGHT-6)
-	// 	bufferSize= RESPONSE_LENGHT-6;																	//fix max length for UDP packet
-	// if(bufferSize > 26)
-	// 	_resPckt_len = ceil((float)bufferSize/32);
-	// else
-	// 	_resPckt_len = 0;
 	if(_sock < MAX_SOCK_NUMBER){
-	  if(mapWiFiUDP[_sock] != NULL){
-      char buffer[bufferSize+1]; 										//bufferSize is filled before by availData
-  		result = mapWiFiUDP[_sock].read(buffer, bufferSize);
+		if(mapWiFiUDP[_sock] != NULL){
+			char buffer[bufferSize+1]; 										//bufferSize is filled before by availData
+				result = mapWiFiUDP[_sock].read(buffer, bufferSize);
+				_resPckt[resp_idx++] = PARAM_NUMS_1;
+				_resPckt[resp_idx++] = (uint8_t)((bufferSize & 0xff00)>>8);//((uint8_t*)&bufferSize)[1];
+				_resPckt[resp_idx++] = (uint8_t)(bufferSize & 0xff);
+				memcpy(_resPckt+resp_idx,buffer,bufferSize);
+				resp_idx = resp_idx + bufferSize;
+				_resPckt[resp_idx++] = END_CMD;
+				transfer_size = resp_idx;
+		}
+		else if(mapWiFiClients[_sock]){
+			uint8_t buffer_tcp[bufferSize+1];
+			bufferSize = mapWiFiClients[_sock].read(buffer_tcp, bufferSize);
+				//TODO need to add a buffer
 			_resPckt[resp_idx++] = PARAM_NUMS_1;
-			_resPckt[resp_idx++] = (uint8_t)((bufferSize & 0xff00)>>8);//((uint8_t*)&bufferSize)[1];
-			_resPckt[resp_idx++] = (uint8_t)(bufferSize & 0xff);
-			memcpy(_resPckt+resp_idx,buffer,bufferSize);
-			resp_idx = resp_idx + bufferSize;
-			_resPckt[resp_idx++] = END_CMD;
-			transfer_size = resp_idx;
-
-	  }
-    else if(mapWiFiClients[_sock]){
-
-      uint8_t buffer_tcp[bufferSize+1];
-      bufferSize = mapWiFiClients[_sock].read(buffer_tcp, bufferSize);
-			//TODO need to add a buffer
-      _resPckt[resp_idx++] = PARAM_NUMS_1;
 			_resPckt[resp_idx++] = (uint8_t)((bufferSize & 0xff00)>>8);//((uint8_t*)&bufferSize)[1];
 			_resPckt[resp_idx++] = (uint8_t)(bufferSize & 0xff);
 			memcpy(_resPckt+resp_idx,buffer_tcp,bufferSize);
@@ -901,7 +912,7 @@ void CommLgc::getDataBuf(){
 			_resPckt[resp_idx++] = END_CMD;
 			transfer_size = resp_idx;
 			bufferSize = mapWiFiClients[_sock].available();
-    }
+		}
 	}
 }
 

@@ -35,10 +35,9 @@ DEALINGS IN THE SOFTWARE
 
 class Configuration {
 
-  public:
-    bool setParam(String param, String value);
-    String getParam(String param);
-
+	public:
+		bool setParam(String param, String value);
+		String getParam(String param);
 };
 
 extern Configuration Config;
