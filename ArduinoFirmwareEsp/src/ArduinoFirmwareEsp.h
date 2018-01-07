@@ -19,11 +19,6 @@
 #include "Configuration.h"
 #include "Webserver.h"
 
-#include <FS.h>
-#include <ArduinoJson.h>
-#include <Hash.h>
-#include <ESP8266WebServer.h>
-
 // Functions
 
 
@@ -34,5 +29,32 @@ void initHostname(void);
 void wifiLed(void);
 
 void setWiFiConfig(void);
+
+#include <FS.h>
+#include <ArduinoJson.h>
+#include <Hash.h>
+#include <ESP8266WebServer.h>
+
+#if defined(MCU_OTA)
+#include <dfu.h>
+#include <dfu-host.h>
+#include <dfu-cmd.h>
+#include "config.h"
+#include <user_config.h>
+#include <dfu-internal.h>
+#include <esp8266-serial.h>
+#include <dfu-esp8266.h>
+#if defined(STAROTTO)
+#include <dfu-stm32.h>
+#elif defined(UNOWIFIDEVED) || defined (GENERIC_ESP8266)
+#include <stk500-device.h>
+#include <dfu-stk500.h>
+#endif
+
+static int _setup_dfu(void);
+
+void _handle_Mcu_OTA(void);
+#endif
+
 
 #endif /* SRC_ARDUINOFIRMWAREESP_H_ */
