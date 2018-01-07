@@ -1,3 +1,5 @@
+#include "WebServer.h"
+
 // uint8_t MAC_array[6];   //mac_address
 // char macAddress[12];    //mac_address
 String newSSID_param;

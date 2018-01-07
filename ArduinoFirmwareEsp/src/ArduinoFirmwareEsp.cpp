@@ -1,21 +1,11 @@
-#include "CommLgc.h"
-#include <ESP8266WiFi.h>
-#include <ESP8266mDNS.h>
-#include <WiFiUdp.h>
-#include <ArduinoOTA.h>
-#include "Configuration.h"
-
-#include <FS.h>
-#include <ArduinoJson.h>
-#include <Hash.h>
-#include <ESP8266WebServer.h>
+#include "ArduinoFirmwareEsp.h"
 
 int ledState = LOW;             // used to set the LED state
 long previousMillis = 0;        // will store last time LED was updated
 long ap_interval = 50;         //blink interval in ap mode
 IPAddress default_IP(192,168,240,1);  //defaul IP Address
 String HOSTNAME = DEF_HOSTNAME;
-String staticIP_param ;
+String staticIP_param;
 String netmask_param;
 String gateway_param;
 String dhcp = "on";

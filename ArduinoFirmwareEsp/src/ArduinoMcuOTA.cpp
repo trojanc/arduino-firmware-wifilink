@@ -1,21 +1,5 @@
-#include "config.h"
-
 #if defined(MCU_OTA)
-
-#include <dfu.h>
-#include <dfu-host.h>
-#include <dfu-cmd.h>
-#include <user_config.h>
-#include <dfu-internal.h>
-#include <esp8266-serial.h>
-#include <dfu-esp8266.h>
-#if defined(STAROTTO)
-#include <dfu-stm32.h>
-#elif defined(UNOWIFIDEVED) || defined (GENERIC_ESP8266)
-#include <stk500-device.h>
-#include <dfu-stk500.h>
-#endif
-
+#include "ArduinoMcuOTA.h"
 struct dfu_data *global_dfu;
 struct dfu_binary_file *global_binary_file;
 

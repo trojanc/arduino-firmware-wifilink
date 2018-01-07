@@ -2,6 +2,8 @@
 /*
  * Firmware version and build date
  */
+#ifndef SRC_CONFIG_H_
+#define SRC_CONFIG_H_
 
 #define BUILD_DATE  __DATE__ " " __TIME__
 #define FW_VERSION  "1.1.0"
@@ -82,3 +84,5 @@
   #define WIFI_LED 14
   #define SSIDNAME "ESP8266-Module"
 #endif
+
+#endif // SRC_CONFIG_H_
