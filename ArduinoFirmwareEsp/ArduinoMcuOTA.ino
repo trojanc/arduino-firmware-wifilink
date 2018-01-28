@@ -11,9 +11,17 @@
 #include <dfu-esp8266.h>
 #if defined(STAROTTO)
 #include <dfu-stm32.h>
-#elif defined(UNOWIFIDEVED) || defined (GENERIC_ESP8266)
+#elif defined(UNOWIFIDEVED)
 #include <stk500-device.h>
 #include <dfu-stk500.h>
+#elif defined (GENERIC_ESP8266)
+#ifdef ESP_CH_SPI
+#include <SPISlave.h>
+#include <dfu-avrisp.h>
+#else
+#include <stk500-device.h>
+#include <dfu-stk500.h>
+#endif
 #endif
 
 struct dfu_data *global_dfu;
@@ -22,7 +30,11 @@ struct dfu_binary_file *global_binary_file;
 static int serial_release(void *dummy)
 {
   //stop Serial communication
+#ifdef ESP_CH_SPI
+  SPISlave.end();
+#else
   Serial.end();
+#endif
   return 0;
 }
 
@@ -47,6 +59,16 @@ global_dfu = dfu_init(&esp8266_serial_arduino_unowifi_interface_ops,
               &atmega328p_device_data,
               &esp8266_dfu_host_ops);
 #elif defined(GENERIC_ESP8266)
+#ifdef ESP_CH_SPI
+global_dfu = dfu_init(&esp8266_spi_arduinouno_hacked_interface_ops,
+              NULL,
+              NULL,
+              serial_release,
+              NULL,
+              &avrisp_dfu_target_ops,
+              &atmega328p_device_data,
+              &esp8266_dfu_host_ops);
+#else
 global_dfu = dfu_init(&esp8266_serial_arduinouno_hacked_interface_ops,
               NULL,
               NULL,
@@ -55,7 +77,8 @@ global_dfu = dfu_init(&esp8266_serial_arduinouno_hacked_interface_ops,
               &stk500_dfu_target_ops,
               &atmega328p_device_data,
               &esp8266_dfu_host_ops);
-  #endif
+#endif
+#endif
 
   if (!global_dfu) {
     /* FIXME: Is this ok ? */
@@ -95,8 +118,7 @@ void _handle_Mcu_OTA(void)
       dfu_target_go(global_dfu);
       _finalize_dfu();
       delay(80);
-      //open Serial Communication
-      Serial.begin(BAUDRATE_COMMUNICATION);
+      ESP.reset();
       break;
     case DFU_CONTINUE:
       break;
