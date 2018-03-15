@@ -28,11 +28,20 @@ Start Arduino IDE and open the ArduinoFirmwareEsp.ino sketch. It opens additiona
 
 ### Board selection and Verify
 
-In tools menu select board options and choose your board/shield/module or Generic ESP8266 from the ESP8266 section of the Boards menu. 
+In Tools menu select board options and choose your board/shield/module or Generic ESP8266 from the ESP8266 section of the Boards menu. Set hardware depended options like crystal frequency, flash frequency, flash mode, flash size, led, reset.  
+
+Then choose esp8266 usage options:
+- CPU frequency option - recommended 80 MHz; 160 MHz produces more heat and has a higher power consumption
+- LwIP version - recommended v1.4; with 2.0 LwIP the Atmega sketch OTA upload fails, which indicates instability  
+- Debug options: Disable and None is the basic setting 
+- Optimal flash size selection for WiFi Link is "4M (1M SPIFFS)". at least 256 kB is needed for SPIFFS
+- "Erase flash" option is new in esp8266 Arduino package 2.4.1. To preserve SPIFFS and WiFi credentials use option "Sketch only". If changing from prebuild firmware, changing LwIP option or after a update to new version of esp8266 Arduino core package use "All flash content" to erase all parameters set be Espressif SDK. Erasing all SDK parameters can help if you experience WiFi connection stability issues.
+
 
 Now verify the sketch with the Verify button. The first compilation after changing the board will take time.
 
 From now on always check the selected board in the right bottom corner of the IDE window. 
+
 
 ### Upload
 
