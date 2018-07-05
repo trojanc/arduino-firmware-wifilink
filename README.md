@@ -4,7 +4,7 @@ This is a fork of Arduino.org WiFi Link firmware. The goal of this fork is make 
 
 The WiFi Link firmware is an ESP8266 arduino sketch developed by Arduino.org in Arduino IDE using Arduino esp8266 core. It was developed for the Arduino Star Otto, Arduino Primo and [Uno WiFi Developer Edition](https://github.com/jandrassy/UnoWiFiDevEdSerial1).
 
-With changes in this fork, it can be used with generic esp8266 in combination with an Arduino MCU.
+With changes in this fork, it can be used with any esp8266 in combination with an Arduino MCU.
 
 The corresponding Arduino library is [WiFi Link library](https://github.com/jandrassy/arduino-library-wifilink).
 
@@ -28,11 +28,20 @@ Start Arduino IDE and open the ArduinoFirmwareEsp.ino sketch. It opens additiona
 
 ### Board selection and Verify
 
-In tools menu select board options and choose your board/shield/module or Generic ESP8266 from the ESP8266 section of the Boards menu. 
+In Tools menu select board options and choose your board/shield/module or Generic ESP8266 from the ESP8266 section of the Boards menu. Set hardware depended options like crystal frequency, flash frequency, flash mode, flash size, led, reset.  
+
+Then choose esp8266 usage options:
+- CPU frequency option - recommended 80 MHz; 160 MHz produces more heat and has a higher power consumption
+- LwIP version - recommended v1.4; with 2.0 LwIP the Atmega sketch OTA upload fails, which indicates instability  
+- Debug options: Disable and None is the basic setting 
+- Optimal flash size selection for WiFi Link is "4M (1M SPIFFS)". at least 256 kB is needed for SPIFFS
+- "Erase flash" option is new in esp8266 Arduino package 2.4.1. To preserve SPIFFS and WiFi credentials use option "Sketch only". If changing from prebuild firmware, changing LwIP option or after a update to new version of esp8266 Arduino core package use "All flash content" to erase all parameters set be Espressif SDK. Erasing all SDK parameters can help if you experience WiFi connection stability issues.
+
 
 Now verify the sketch with the Verify button. The first compilation after changing the board will take time.
 
 From now on always check the selected board in the right bottom corner of the IDE window. 
+
 
 ### Upload
 
@@ -82,7 +91,7 @@ If you have not default hostname or a static IP configured and you often upload 
 
 The WiFi Link firmware build without `#define MCU_OTA` (config.h) doesn't support ATmega sketch OTA upload. To build from the source codes with `MCU_OTA` you need a library called dfu.
 
-For OTA with generic esp8266 module/board/shield, the reset pin of the ATmega must be [connected](https://github.com/jandrassy/arduino-firmware-wifilink/wiki/Test-Setup) to an ESP GPIO pin. Default in dfu library is GPIO5. You can change it to GPIO0, as it is on pinout header on most ESP modules. Star Otto and Uno WiFi have special setting hardcoded.
+For OTA with esp8266 module/board/shield, the reset pin of the ATmega must be [connected](https://github.com/jandrassy/arduino-firmware-wifilink/wiki/Test-Setup) to an ESP GPIO pin. Default in dfu library is GPIO5. You can change it to GPIO0, as it is on pinout header on most ESP modules. Star Otto and Uno WiFi have special setting hardcoded.
 
 Only settings for the ATmega328p with Uno bootloader (Optiboot) exist in the dfu library. 
 
@@ -103,3 +112,12 @@ tools.avrdude.upload.network_pattern="{network_cmd}" -i {serial.port} -p 80 -f "
 ```
 
 Put the tool executable to a location evaluated by tools.avrdude.network_cmd. In IDE 1.8.5 it is `hardware/tools/avr/bin` in installation folder of IDE.
+
+## SPI connection
+
+WiFi Link can be used for [MCU connected to esp8266 over SPI](https://github.com/jandrassy/arduino-firmware-wifilink/wiki/images/uno-wemos-spi_bb.png). To use it for any esp8266 module/shield/board, change the ESP_CH_UART to ESP_CH_SPI in the GENERIC_ESP8266 section and for the library add `uno.build.extra_flags=-DESP_CH_SPI' to avr boards.txt. 
+
+SPI pins are on the ICSP header of UNO/Mega/Nano (digital pins 11, 12, 13). Pin 10 is needed as SPI SLAVESELECT and pin 7 is used by WiFi Link as SLAVEREADY signal from the esp8266 GPIO pin 5 (D1). 
+
+SPI connection is used for AVR ISP (In System Programming). WiFi Link with MCU_OTA option and dfu library can write a sketch uploaded OTA to Atmega with SPI. But it is complicated. Write an issue on WiFi Link firmware, if you need it working.
+
