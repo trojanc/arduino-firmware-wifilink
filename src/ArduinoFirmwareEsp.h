@@ -17,7 +17,7 @@
 #include "firmware.h"
 #include "CommLgc.h"
 #include "Configuration.h"
-#include "Webserver.h"
+#include "WebServer.h"
 
 // Functions
 
@@ -44,12 +44,8 @@ void setWiFiConfig(void);
 #include <dfu-internal.h>
 #include <esp8266-serial.h>
 #include <dfu-esp8266.h>
-#if defined(STAROTTO)
-#include <dfu-stm32.h>
-#elif defined(UNOWIFIDEVED) || defined (GENERIC_ESP8266)
 #include <stk500-device.h>
 #include <dfu-stk500.h>
-#endif
 
 static int _setup_dfu(void);
 

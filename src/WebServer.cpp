@@ -323,25 +323,9 @@ void initWebServer(){
 				StaticJsonBuffer<200> jsonBuffer;
 				JsonObject& boardInfo = jsonBuffer.createObject();
 				String output = "";
-				if (BOARDMODEL == "PRIMO"){
-					boardInfo["name"] = "Primo";
-					boardInfo["icon"] = "/img/logoPrimo.ico";
-					boardInfo["logo"] = "/img/logoPrimo.png";
-				}
-				else if (BOARDMODEL == "STAROTTO"){
-					boardInfo["name"] = "Star Otto";
-					boardInfo["icon"] = "/img/logoOtto.ico";
-					boardInfo["logo"] = "/img/logoOtto.png";
-				}
-				else if (BOARDMODEL =="UNOWIFIDEVED"){
-					boardInfo["name"] = "Uno WiFi";
-					boardInfo["icon"] = "/img/logoUnoWiFi.ico";
-					boardInfo["logo"] = "/img/logoUnoWiFi.png";
-				} else {
-					boardInfo["name"] = "WiFi Link";
-					boardInfo["icon"] = "/img/logoUnoWiFi.ico";
-					boardInfo["logo"] = "/img/logoUnoWiFi.png";
-				}
+				boardInfo["name"] = "Uno WiFi";
+				boardInfo["icon"] = "/img/logoUnoWiFi.ico";
+				boardInfo["logo"] = "/img/logoUnoWiFi.png";
 				boardInfo["link"] = "https://github.com/jandrassy/arduino-library-wifilink#wifi-link-library";
 
 				boardInfo["fw_name"] = FW_NAME;

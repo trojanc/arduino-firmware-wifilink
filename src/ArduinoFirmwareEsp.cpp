@@ -13,13 +13,14 @@ String dhcp = "on";
 ESP8266WebServer server(80);    //server UI
 
 void setup() {
-
-  #if defined(MCU_OTA)
   _setup_dfu();
-  #endif
-
   pinMode(WIFI_LED, OUTPUT);      //initialize wifi LED
+  digitalWrite(WIFI_LED, LOW);  
+  digitalWrite(WIFI_LED, HIGH);
+  delay(2000);
   digitalWrite(WIFI_LED, LOW);
+  delay(2000);
+   digitalWrite(WIFI_LED, HIGH);
   ArduinoOTA.begin();             //OTA ESP
   initMDNS();
   CommunicationLogic.begin();
@@ -27,6 +28,7 @@ void setup() {
   initHostname();
   setWiFiConfig();
   initWebServer();                 //UI begin
+
 
 }
 
@@ -111,10 +113,6 @@ void setWiFiConfig(){
     WiFi.softAP(softApssid);
     WiFi.softAPConfig(default_IP, default_IP, IPAddress(255, 255, 255, 0));   //set default ip for AP mode
   }
-  //set STA mode
-  #if defined(ESP_CH_SPI)
-  ETS_SPI_INTR_DISABLE();
-  #endif
   { // first static config if configured
     String staticIP = Config.getParam("staticIP").c_str();
     if (staticIP != "" && staticIP != "0.0.0.0") {
@@ -132,9 +130,6 @@ void setWiFiConfig(){
     WiFi.mode(WIFI_AP_STA); // STA must be active for library connects
     setWiFiConfig(); // setup AP
   }
-  #if defined(ESP_CH_SPI)
-  ETS_SPI_INTR_ENABLE();
-  #endif
 }
 
 #if defined(MCU_OTA)
@@ -151,16 +146,6 @@ static int serial_release(void *dummy)
 
 static int _setup_dfu(void)
 {
-  #if defined(STAROTTO)
-  global_dfu = dfu_init(&esp8266_serial_star8_interface_ops,
-                NULL,
-                NULL,
-                serial_release,
-                NULL,
-                &stm32_dfu_target_ops,
-                &stm32f469bi_device_data,
-                &esp8266_dfu_host_ops);
-#elif defined(UNOWIFIDEVED)
 global_dfu = dfu_init(&esp8266_serial_arduino_unowifi_interface_ops,
               NULL,
               NULL,
@@ -169,17 +154,6 @@ global_dfu = dfu_init(&esp8266_serial_arduino_unowifi_interface_ops,
               &stk500_dfu_target_ops,
               &atmega328p_device_data,
               &esp8266_dfu_host_ops);
-#elif defined(GENERIC_ESP8266)
-global_dfu = dfu_init(&esp8266_serial_arduinouno_hacked_interface_ops,
-              NULL,
-              NULL,
-              serial_release,
-              NULL,
-              &stk500_dfu_target_ops,
-              &atmega328p_device_data,
-              &esp8266_dfu_host_ops);
-  #endif
-
   if (!global_dfu) {
     /* FIXME: Is this ok ? */
     return -1;

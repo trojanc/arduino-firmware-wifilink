@@ -20,15 +20,16 @@ ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE
 
 */
+
+#ifndef H_COMM_LGC_H
+#define H_COMM_LGC_H
+
 #include "CommItf.h"
 #include "utility/wifi_utils.h"
 #include <ESP8266WiFi.h>
 //#include <ESP8266WiFiScan.h>
 #include <WiFiUdp.h>
 #include "Arduino.h"
-
-#ifndef H_COMM_LGC_H
-#define H_COMM_LGC_H
 
 // #define MAX_MODE_NUM 2
 // #define MAP_TCP_MODE 1

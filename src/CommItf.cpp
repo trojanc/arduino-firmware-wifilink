@@ -43,40 +43,21 @@ CommItf::CommItf(){
 
 bool CommItf::begin(){
 
-		#if defined ESP_CH_UART
-	 	Serial.begin(BAUDRATE_COMMUNICATION);
-		while(!Serial);
-		#ifdef DEBUG
-		Serial1.begin(BAUDRATE_DEBUG);
-		Serial1.println("--SERIAL started--");
-		#endif
-		return true;
-
-		#elif defined ESP_CH_SPI
-		pinMode(SLAVE_READY_PIN,OUTPUT);					//set SlaveReady pin
-		digitalWrite(SLAVE_READY_PIN,LOW);				//set slaveready to HIGH level when ESP is ready to send data
-		SPISlaveInit();
-		#ifdef DEBUG
-		Serial.begin(BAUDRATE_DEBUG);
-		Serial.println("--SPI started--");
-		#endif
-		return true;
-		#endif
-
-	 	return false;
+	Serial.begin(BAUDRATE_COMMUNICATION);
+	while(!Serial);
+	#ifdef DEBUG
+	Serial1.begin(BAUDRATE_DEBUG);
+	Serial1.println("--SERIAL started--");
+	#endif
+	return true;
 }
 
 bool CommItf::available(){
-		#if defined ESP_CH_UART
-		return Serial.available();
-		#elif defined ESP_CH_SPI
-		return processing;
-		#endif
+	return Serial.available();
 }
 
 int CommItf::read(tMsgPacket *_pckt){
-
-			return createPacket(_pckt);
+	return createPacket(_pckt);
 }
 
 /* Cmd Struct Message */
@@ -128,67 +109,11 @@ int CommItf::createPacket(tMsgPacket *_reqPckt){
 }
 
 void CommItf::write(uint8_t* _pckt,int transfer_size){
-		#if defined ESP_CH_UART
-		Serial.write(_pckt,transfer_size);
-		#elif defined ESP_CH_SPI
-		SPISlaveWrite(_pckt,transfer_size);
-		#endif
+	Serial.write(_pckt,transfer_size);
 }
 
 /** Private Functions **/
 
-#if defined ESP_CH_SPI
-void CommItf::SPISlaveInit(){
-	This = this;
-	//SPI Data register
-	SPISlave.onData([](uint8_t * data, size_t len) {
-		if(data_received_size<4){
-			digitalWrite(SLAVE_READY_PIN,LOW);
-			memcpy(raw_pckt+(data_received_size*32),data, len);
-			data_received_size++;
-		}
-	});
-
-	//SPI Status register
-	SPISlave.onStatus([](uint32_t data) {
-		if(data==SPI_DATA_READY){
-			if(raw_pckt[0]==START_CMD){
-				processing = true;
-			}
-		}
-		else if(data==SPI_DATA_RECEIVED){
-			digitalWrite(SLAVE_READY_PIN,LOW);
-			req_send = true;
-		}
-		else
-			Serial.println("status error");
-	});
-
-	// Setup SPI Slave registers and pins
-	SPISlave.begin();
-
-}
-
-void CommItf::SPISlaveWrite(uint8_t* _resPckt,int transfer_size){
-	SPISlave.setData((uint8_t *)_resPckt,32);                     //send response to MCU
-	digitalWrite(SLAVE_READY_PIN,HIGH);
-	transfer_size = ceil((float)transfer_size/32);
-	if(transfer_size > 0){														//response length greater than 32 bytes
-		for(int i=1;i<transfer_size;i++){
-			while(!req_send){
-				delayMicroseconds(100);										//wait master
-			};
-			SPISlave.setData((uint8_t *)_resPckt+(i*32),32);					//split response
-			digitalWrite(SLAVE_READY_PIN,HIGH);
-			req_send = false;
-		}
-	}
-	processing = false;
-	data_received_size = 0;
-}
-#endif
-
-#if defined ESP_CH_UART
 int CommItf::timedRead(){
 	int c;
 	_startMillis = millis();
@@ -210,6 +135,4 @@ String CommItf::readStringUntil(char terminator){
 	}
 	return ret;
 }
-#endif
-
 CommItf CommunicationInterface;
