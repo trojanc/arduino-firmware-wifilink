@@ -85,10 +85,50 @@ const char HTTP_SCRIPT_INFO_END[] PROGMEM =
     "eb('i').innerHTML=s;"
   "}"
   "</script>";
+
+const char HTTP_FORM_UPG[] PROGMEM =
+  "<div id='f1' name='f1' style='display:block;'>"
+  "<fieldset><legend><b>&nbsp;Upgrade by file upload&nbsp;</b></legend>";
+const char HTTP_FORM_RST_UPG[] PROGMEM =
+  "<form method='post' action='u2' enctype='multipart/form-data'>"
+  "<br/><input type='file' name='u2'><br/>"
+  "<br/><button type='submit' onclick='eb(\"f1\").style.display=\"none\";eb(\"f2\").style.display=\"block\";this.form.submit();'>Start Upgrade {r1</button></form>"
+  "</fieldset>"
+  "</div>"
+  "<div id='f2' name='f2' style='display:none;text-align:center;'><b>Upload Started ...</b></div>";
+
+
+
 const char HTTP_BTN_MAIN[] PROGMEM =
   "<br/><br/><form action='.' method='get'><button>Main Menu</button></form>";
+const char HTTP_BTN_MENU_WIFI[] PROGMEM =
+  "<br/><form action='w0' method='get'><button>Configure Wifi</button></form>";
+const char HTTP_BTN_MENU_MQTT[] PROGMEM =
+  "<br/><form action='mq' method='get'><button>Configure MQTT</button></form>";
+
+
+const char HTTP_MSG_RSTRT[] PROGMEM =
+  "<br/><div style='text-align:center;'>Device will restart</div><br/>";
 
 const char HDR_CTYPE_HTML[] PROGMEM = "text/html";
+
+
+uint8_t upload_error = 0;
+uint8_t upload_file_type;
+uint8_t *settings_new = NULL;
+uint8_t upload_progress_dot_count;
+uint8_t config_block_count = 0;
+uint8_t config_xor_on = 0;
+uint8_t config_xor_on_set = CONFIG_FILE_XOR;
+
+// Helper function to avoid code duplication (saves 4k Flash)
+static void WebGetArg(const char* arg, char* out, size_t max)
+{
+  String s = server.arg(arg);
+  strncpy(out, s.c_str(), max);
+  out[max-1] = '\0';  // Ensure terminating NUL
+}
+
 void SetHeader()
 {
 	server.sendHeader(F("Cache-Control"), F("no-cache, no-store, must-revalidate"));
@@ -214,6 +254,217 @@ void HandleInformation(){
   ShowPage(page);
 }
 
+
+
+void HandleConfiguration()
+{
+  String page = FPSTR(HTTP_HEAD);
+  page.replace(F("{v}"), "Configuration");
+  page += FPSTR(HTTP_HEAD_STYLE);
+  page += FPSTR(HTTP_BTN_MENU_WIFI);
+  page += FPSTR(HTTP_BTN_MENU_MQTT);
+  page += FPSTR(HTTP_BTN_MAIN);
+  ShowPage(page);
+}
+
+void SettingsNewFree()
+{
+  if (settings_new != NULL) {
+    free(settings_new);
+    settings_new = NULL;
+  }
+}
+
+void HandleUpgradeFirmware()
+{
+//   if (HttpUser()) { return; }
+//   AddLog_P(LOG_LEVEL_DEBUG, S_LOG_HTTP, S_FIRMWARE_UPGRADE);
+
+  String page = FPSTR(HTTP_HEAD);
+  page.replace(F("{v}"), "Firmware Upgrade");
+  page += FPSTR(HTTP_HEAD_STYLE);
+  page += FPSTR(HTTP_FORM_UPG);
+  page += FPSTR(HTTP_FORM_RST_UPG);
+  page.replace(F("{r1"), "Upgrade");
+  page += FPSTR(HTTP_BTN_MAIN);
+  ShowPage(page);
+
+  upload_error = 0;
+  upload_file_type = 0;
+}
+
+void HandleUploadLoop()
+{
+  // Based on ESP8266HTTPUpdateServer.cpp uses ESP8266WebServer Parsing.cpp and Cores Updater.cpp (Update)
+//   boolean _serialoutput = (LOG_LEVEL_DEBUG <= seriallog_level);
+
+//   if (HTTP_USER == webserver_state) { return; }
+  if (upload_error) {
+    if (!upload_file_type) { Update.end(); }
+    return;
+  }
+
+  HTTPUpload& upload = server.upload();
+
+  if (UPLOAD_FILE_START == upload.status) {
+    restart_flag = 60;
+    if (0 == upload.filename.c_str()[0]) {
+      upload_error = 1;
+      return;
+    }
+    SettingsSave();  // Free flash for upload
+    // snprintf_P(log_data, sizeof(log_data), PSTR(D_LOG_UPLOAD D_FILE " %s ..."), upload.filename.c_str());
+    // AddLog(LOG_LEVEL_INFO);
+    if (upload_file_type) {
+      SettingsNewFree();
+      if (!(settings_new = (uint8_t *)malloc(sizeof(Settings)))) {
+        upload_error = 2;
+        return;
+      }
+    } else {
+    //   MqttRetryCounter(60);
+    //   if (Settings.flag.mqtt_enabled) MqttDisconnect();
+      uint32_t maxSketchSpace = (ESP.getFreeSketchSpace() - 0x1000) & 0xFFFFF000;
+      if (!Update.begin(maxSketchSpace)) {         //start with max available size
+        upload_error = 2;
+        return;
+      }
+    }
+    upload_progress_dot_count = 0;
+  } else if (!upload_error && (UPLOAD_FILE_WRITE == upload.status)) {
+    if (0 == upload.totalSize) {
+      if (upload_file_type) {
+        if (upload.buf[0] != CONFIG_FILE_SIGN) {
+          upload_error = 8;
+          return;
+        }
+        config_xor_on = upload.buf[1];
+        config_block_count = 0;
+      } else {
+        if (upload.buf[0] != 0xE9) {
+          upload_error = 3;
+          return;
+        }
+        uint32_t bin_flash_size = ESP.magicFlashChipSize((upload.buf[3] & 0xf0) >> 4);
+        if(bin_flash_size > ESP.getFlashChipRealSize()) {
+          upload_error = 4;
+          return;
+        }
+        upload.buf[2] = 3;  // Force DOUT - ESP8285
+      }
+    }
+    if (upload_file_type) { // config
+      if (!upload_error) {
+        if (upload.currentSize > (sizeof(Settings) - (config_block_count * HTTP_UPLOAD_BUFLEN))) {
+          upload_error = 9;
+          return;
+        }
+        memcpy(settings_new + (config_block_count * HTTP_UPLOAD_BUFLEN), upload.buf, upload.currentSize);
+        config_block_count++;
+      }
+    } else {  // firmware
+      if (!upload_error && (Update.write(upload.buf, upload.currentSize) != upload.currentSize)) {
+        upload_error = 5;
+        return;
+      }
+    }
+  } else if(!upload_error && (UPLOAD_FILE_END == upload.status)) {
+    if (upload_file_type) {
+      if (config_xor_on) {
+        for (uint16_t i = 2; i < sizeof(Settings); i++) {
+          settings_new[i] ^= (config_xor_on_set +i);
+        }
+      }
+      SettingsDefaultSet2();
+      memcpy((char*)&Settings +16, settings_new +16, sizeof(Settings) -16);
+      memcpy((char*)&Settings +8, settings_new +8, 4);  // Restore version and auto upgrade
+      SettingsNewFree();
+    } else {
+      if (!Update.end(true)) { // true to set the size to the current progress
+        upload_error = 6;
+        return;
+      }
+    }
+    if (!upload_error) {
+    //   snprintf_P(log_data, sizeof(log_data), PSTR(D_LOG_UPLOAD D_SUCCESSFUL " %u bytes. " D_RESTARTING), upload.totalSize);
+    //   AddLog(LOG_LEVEL_INFO);
+    }
+  } else if (UPLOAD_FILE_ABORTED == upload.status) {
+    restart_flag = 0;
+    // MqttRetryCounter(0);
+    upload_error = 7;
+    if (!upload_file_type) { Update.end(); }
+  }
+  delay(0);
+}
+
+
+void HandleUpgradeFirmwareStart()
+{
+//   if (HttpUser()) { return; }
+  char svalue[100];
+
+//   AddLog_P(LOG_LEVEL_DEBUG, PSTR(D_LOG_HTTP D_UPGRADE_STARTED));
+//   WifiConfigCounter();
+
+  char tmp[100];
+  String page = FPSTR(HTTP_HEAD);
+  page.replace(F("{v}"), "Information");
+  page += FPSTR(HTTP_HEAD_STYLE);
+  page += F("<div style='text-align:center;'><b>" D_UPGRADE_STARTED " ...</b></div>");
+  page += FPSTR(HTTP_MSG_RSTRT);
+  page += FPSTR(HTTP_BTN_MAIN);
+  ShowPage(page);
+
+//   snprintf_P(svalue, sizeof(svalue), PSTR("Upgrade 1"));
+//   ExecuteCommand(svalue);
+}
+
+void HandleUploadDone()
+{
+//   if (HttpUser()) { return; }
+//   AddLog_P(LOG_LEVEL_DEBUG, PSTR(D_LOG_HTTP D_UPLOAD_DONE));
+
+  char error[100];
+
+//   WifiConfigCounter();
+  restart_flag = 0;
+//   MqttRetryCounter(0);
+
+  String page = FPSTR(HTTP_HEAD);
+  page.replace(F("{v}"), "Information");
+  page += FPSTR(HTTP_HEAD_STYLE);
+  page += F("<div style='text-align:center;'><b>Upload <font color='");
+  if (upload_error) {
+    page += F("red'>Failed</font></b><br/><br/>");
+    switch (upload_error) {
+      case 1: strncpy_P(error, PSTR(D_UPLOAD_ERR_1), sizeof(error)); break;
+      case 2: strncpy_P(error, PSTR(D_UPLOAD_ERR_2), sizeof(error)); break;
+      case 3: strncpy_P(error, PSTR(D_UPLOAD_ERR_3), sizeof(error)); break;
+      case 4: strncpy_P(error, PSTR(D_UPLOAD_ERR_4), sizeof(error)); break;
+      case 5: strncpy_P(error, PSTR(D_UPLOAD_ERR_5), sizeof(error)); break;
+      case 6: strncpy_P(error, PSTR(D_UPLOAD_ERR_6), sizeof(error)); break;
+      case 7: strncpy_P(error, PSTR(D_UPLOAD_ERR_7), sizeof(error)); break;
+      case 8: strncpy_P(error, PSTR(D_UPLOAD_ERR_8), sizeof(error)); break;
+      case 9: strncpy_P(error, PSTR(D_UPLOAD_ERR_9), sizeof(error)); break;
+      default:
+        snprintf_P(error, sizeof(error), PSTR(D_UPLOAD_ERROR_CODE " %d"), upload_error);
+    }
+    page += error;
+    // snprintf_P(log_data, sizeof(log_data), PSTR(D_UPLOAD ": %s"), error);
+    // AddLog(LOG_LEVEL_DEBUG);
+    // stop_flash_rotate = Settings.flag.stop_flash_rotate;
+  } else {
+    page += F("green'>Successful</font></b><br/>");
+    page += FPSTR(HTTP_MSG_RSTRT);
+    restart_flag = 2;
+  }
+  SettingsNewFree();
+  page += F("</div><br/>");
+  page += FPSTR(HTTP_BTN_MAIN);
+  ShowPage(page);
+}
+
 // uint8_t MAC_array[6];	 //mac_address
 // char macAddress[12];		//mac_address
 String newSSID_param;
@@ -229,144 +480,6 @@ int tot = 0;
 bool connect_wifi = false;
 //String HOSTNAME = "arduino";
 
-
-String getContentType(String filename){
-	if(server.hasArg("download")) return "application/octet-stream";
-	else if(filename.endsWith(".htm")) return "text/html";
-	else if(filename.endsWith(".html")) return "text/html";
-	else if(filename.endsWith(".css")) return "text/css";
-	else if(filename.endsWith(".js")) return "application/javascript";
-	else if(filename.endsWith(".png")) return "image/png";
-	else if(filename.endsWith(".gif")) return "image/gif";
-	else if(filename.endsWith(".jpg")) return "image/jpeg";
-	else if(filename.endsWith(".ico")) return "image/x-icon";
-	else if(filename.endsWith(".xml")) return "text/xml";
-	else if(filename.endsWith(".pdf")) return "application/x-pdf";
-	else if(filename.endsWith(".zip")) return "application/x-zip";
-	else if(filename.endsWith(".gz")) return "application/x-gzip";
-	return "text/plain";
-}
-
-bool handleFileRead(String path){
-	if(path.endsWith("/")) path += "index.html";
-	String contentType = getContentType(path);
-	File file = SPIFFS.open(path, "r");
-	if (file == NULL)
-		return false;
-	size_t sent = server.streamFile(file, contentType);
-	file.close();
-	return true;
-}
-
-String toStringIp(IPAddress ip) {
-	String res = "";
-	for (int i = 0; i < 3; i++) {
-		res += String((ip >> (8 * i)) & 0xFF) + ".";
-	}
-	res += String(((ip >> 8 * 3)) & 0xFF);
-	return res;
-}
-
-String toStringWifiMode(int mod) {
-	String mode;
-	switch (mod) {
-		case 0:
-			mode = "OFF";
-			break;
-		case 1:
-			mode = "STA";
-			break;
-		case 2:
-			mode = "AP";
-			break;
-		case 3:
-			mode = "AP+STA";
-			break;
-		case 4:
-			mode = "----";
-			break;
-		default:
-			break;
-	}
-	return mode;
-}
-
-WiFiMode intToWifiMode(int mod) {
-	WiFiMode mode;
-	switch (mod) {
-		case 0:
-			mode = WIFI_OFF;
-			break;
-		case 1:
-			mode = WIFI_STA;
-			break;
-		case 2:
-			mode = WIFI_AP;
-			break;
-		case 3:
-			mode = WIFI_AP_STA;
-			break;
-		case 4:
-			break;
-		default:
-			break;
-	}
-	return mode;
-}
-
-String toStringWifiStatus(int state) {
-	String status;
-	switch (state) {
-		case 0:
-			status = "connecting";
-			break;
-		case 1:
-			status = "unknown status";
-			break;
-		case 2:
-			status = "wifi scan completed";
-			break;
-		case 3:
-			status = "got IP address";
-			// statements
-			break;
-		case 4:
-			status = "connection failed";
-			break;
-		default:
-			break;
-	}
-	return status;
-}
-
-String toStringEncryptionType(int thisType) {
-	String eType;
-	switch (thisType) {
-		case ENC_TYPE_WEP:
-			eType = "WEP";
-			break;
-		case ENC_TYPE_TKIP:
-			eType = "WPA";
-			break;
-		case ENC_TYPE_CCMP:
-			eType = "WPA2";
-			break;
-		case ENC_TYPE_NONE:
-			eType = "None";
-			break;
-		case ENC_TYPE_AUTO:
-			eType = "Auto";
-			break;
-	}
-	return eType;
-}
-
-IPAddress stringToIP(String address) {
-	int p1 = address.indexOf('.'), p2 = address.indexOf('.', p1 + 1), p3 = address.indexOf('.', p2 + 1); //, 4p = address.indexOf(3p+1);
-	String ip1 = address.substring(0, p1), ip2 = address.substring(p1 + 1, p2), ip3 = address.substring(p2 + 1, p3), ip4 = address.substring(p3 + 1);
-
-	return IPAddress(ip1.toInt(), ip2.toInt(), ip3.toInt(), ip4.toInt());
-}
 
 void handleWebServer(){
 	if(connect_wifi){
@@ -400,163 +513,14 @@ void initWebServer(){
 
 	server.on("/", HandleRoot);
 	server.on("/in", HandleInformation);
+	server.on("/cn", HandleConfiguration);
+	server.on("/up", HandleUpgradeFirmware);
+    server.on("/u1", HandleUpgradeFirmwareStart);  // OTA
+    server.on("/u2", HTTP_POST, HandleUploadDone, HandleUploadLoop);
+	server.onNotFound([](){
+		server.send(404, "text/plain", "FileNotFound");
+	});
 
-	//"wifi/info" information
-	server.on("/wifi/info", []() {
-		String ipadd = (WiFi.getMode() == 1 || WiFi.getMode() == 3) ? toStringIp(WiFi.localIP()) : toStringIp(WiFi.softAPIP());
-		String staticadd = dhcp.equals("on") ? "0.0.0.0" : staticIP_param;
-		int change = WiFi.getMode() == 1 ? 3 : 1;
-		String cur_ssid = (WiFi.getMode() == 2 )? "none" : WiFi.SSID();
-
-		server.send(200,
-				"text/plain",
-				String("{\"ssid\":\"" + cur_ssid +
-				"\",\"hostname\":\"" + WiFi.hostname() +
-				"\",\"ip\":\"" + ipadd +
-				"\",\"mode\":\"" + toStringWifiMode(WiFi.getMode()) +
-				"\",\"chan\":\""+ WiFi.channel() +
-				"\",\"status\":\"" + toStringWifiStatus(WiFi.status()) +
-				"\",\"gateway\":\"" + toStringIp(WiFi.gatewayIP()) +
-				"\",\"netmask\":\"" + toStringIp(WiFi.subnetMask()) +
-				"\",\"rssi\":\""+ WiFi.RSSI() +
-				"\",\"mac\":\"" + WiFi.macAddress() +
-				"\",\"phy\":\"" + WiFi.getPhyMode() +
-				"\",\"dhcp\": \"" + dhcp +
-				"\",\"staticip\":\"" + staticadd +
-				"\",\"warn\": \"" + "<a href='#' class='pure-button button-primary button-larger-margin' onclick='changeWifiMode(" + change + ")'>Switch to " + toStringWifiMode(change) + " mode</a>\""+
-				"}" ));
-		});
-
-		//"system/info" information
-		server.on("/system/info", []() {
-			server.send(200,
-					"text/plain",
-					String("{\"heap\":\""+ String(ESP.getFreeHeap()/1024)+" KB\",\"id\":\"" + String(ESP.getFlashChipId()) + "\",\"size\":\"" + (ESP.getFlashChipSize() / 1024 / 1024) + " MB\",\"baud\":\"9600\"}"));
-		});
-
-		server.on("/heap", []() {
-			server.send(200,
-					"text/plain",
-					String(ESP.getFreeHeap()));
-		});
-
-		server.on("/system/update", []() {
-			String newhostname = server.arg("name");
-			WiFi.hostname(newhostname);
-			MDNS.begin(newhostname.c_str());
-			MDNS.setInstanceName(newhostname);
-			server.send(200, "text/plain", newhostname);
-			Config.setParam("hostname", newhostname);
-		});
-
-//		server.on("/wifi/netNumber", []() {
-//			tot = WiFi.scanNetworks();
-//			server.send(200, "text/plain", String(tot));
-//		});
-
-//		server.on("/wifi/scan", []() {
-//			String scanResp = "";
-//			if (tot == 0) {
-//				server.send(200, "text/plain", "No networks found");
-//			}
-//			if (tot == -1 ) {
-//				server.send(500, "text/plain", "Error during scanning");
-//			}
-//
-//			scanResp += "{\"result\": { \"APs\" : [ ";
-//			//ETS_SPI_INTR_DISABLE();
-//			for (int netIndex = 0; netIndex < tot; netIndex++) {
-//				scanResp += "{\"enc\" : \"";
-//				scanResp += toStringEncryptionType (WiFi.encryptionType(netIndex));
-//				scanResp += "\",";
-//				scanResp += "\"essid\":\"";
-//				scanResp += WiFi.SSID(netIndex);
-//				scanResp += "\",";
-//				scanResp += "\"rssi\" :\"";
-//				scanResp += WiFi.RSSI(netIndex);
-//				scanResp += "\"}";
-//				if (netIndex != tot - 1)
-//					scanResp += ",";
-//			}
-//			scanResp += "]}}";
-//			//ETS_SPI_INTR_ENABLE();
-//			server.send(200, "text/plain", scanResp);
-//		});
-
-		server.on("/connect", []() {
-			newSSID_param = server.arg("essid");
-			newPASSWORD_param = server.arg("passwd");
-			server.send(200, "text/plain", "1");
-			clearStaticIP();
-			connect_wifi = true;
-		});
-
-		server.on("/connstatus", []() {
-			String ipadd = (WiFi.getMode() == 1 || WiFi.getMode() == 3) ? toStringIp(WiFi.localIP()) : toStringIp(WiFi.softAPIP());
-			server.send(200,
-					"text/plain",
-					String("{\"url\":\"got IP address\", \"ip\":\""+ipadd+"\", \"modechange\":\"no\", \"ssid\":\""+WiFi.SSID()+"\", \"reason\":\"-\", \"status\":\""+ toStringWifiStatus(WiFi.status()) +"\"}"));
-		});
-
-
-		server.on("/setmode", []() {
-			int newMode = server.arg("mode").toInt();
-			switch (newMode){
-				case 1 :
-				case 3 :
-					server.send(200, "text/plain", String("Mode changed " + toStringWifiMode(WiFi.getMode())));
-					WiFi.mode(intToWifiMode(newMode));
-					break;
-				case 2 :
-					server.send(200, "text/plain", String("Mode changed " + toStringWifiMode(WiFi.getMode())));
-					WiFi.mode(WIFI_AP);
-					break;
-			}
-
-		});
-
-		server.on("/special", []() {
-			dhcp = server.arg("dhcp");
-			staticIP_param = server.arg("staticip");
-			netmask_param = server.arg("netmask");
-			gateway_param = server.arg("gateway");
-
-			if (dhcp == "off") {
-				server.send(200, "text/plain", String("{\"url\":\"" + staticIP_param + "\"}"));
-				delay(500); // to let the response finish
-				WiFi.config(stringToIP(staticIP_param), stringToIP(gateway_param), stringToIP(netmask_param));
-				Config.setParam("staticIP", staticIP_param);
-				Config.setParam("netMask", netmask_param);
-				Config.setParam("gatewayIP", gateway_param);
-			 }
-			 else {
-				server.send(200, "text/plain",	"1");
-				clearStaticIP();
-				ESP.restart();
-			 }
-		 });
-
-		 server.on("/boardInfo", []() {
-				StaticJsonBuffer<200> jsonBuffer;
-				JsonObject& boardInfo = jsonBuffer.createObject();
-				String output = "";
-				boardInfo["name"] = "Uno WiFi";
-				boardInfo["icon"] = "/img/logoUnoWiFi.ico";
-				boardInfo["logo"] = "/img/logoUnoWiFi.png";
-				boardInfo["link"] = "https://github.com/jandrassy/arduino-library-wifilink#wifi-link-library";
-
-				boardInfo["fw_name"] = FW_NAME;
-				boardInfo["fw_version"] = FW_VERSION;
-				boardInfo["build_date"] = BUILD_DATE;
-
-				boardInfo.printTo(output);
-				server.send(200, "text/json", output);
-			});
-
-		server.onNotFound([](){
-			server.send(404, "text/plain", "FileNotFound");
-		});
-
-		server.begin();
-		delay(5); // VB: exactly 5, no more or less, no yield()!
+	server.begin();
+	delay(5); // VB: exactly 5, no more or less, no yield()!
 }

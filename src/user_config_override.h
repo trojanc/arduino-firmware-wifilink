@@ -1,0 +1,43 @@
+/*
+  user_config_override.h - user configuration overrides user_config.h for Sonoff-Tasmota
+
+  Copyright (C) 2018  Theo Arends
+
+  This program is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation, either version 3 of the License, or
+  (at your option) any later version.
+
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License
+  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
+#ifndef _USER_CONFIG_OVERRIDE_H_
+#define _USER_CONFIG_OVERRIDE_H_
+
+// force the compiler to show a warning to confirm that this file is inlcuded
+#warning **** user_config_override.h: Using Settings from this File ****
+// -- Master parameter control --------------------
+#undef  CFG_HOLDER
+#define CFG_HOLDER        0x20161211             // [Reset 1] Change this value to load SECTION1 configuration parameters to flash
+
+// -- Setup your own Wifi settings  ---------------
+#undef STA_SSID1
+#define STA_SSID1              ""
+
+#undef STA_PASS1
+#define STA_PASS1              ""
+
+#undef STA_SSID2
+#define STA_SSID2              ""
+
+#undef STA_PASS2
+#define STA_PASS2              ""
+
+
+#endif //_USER_CONFIG_OVERRIDE_H_

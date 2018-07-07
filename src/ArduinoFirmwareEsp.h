@@ -13,12 +13,21 @@
 #include <ESP8266mDNS.h>
 #include <WiFiUdp.h>
 #include <ArduinoOTA.h>
-
+#include <stdint.h>
 #include "firmware.h"
 #include "CommLgc.h"
 #include "Configuration.h"
+#include "settings.h"
+#ifdef USE_CONFIG_OVERRIDE
+  #include "user_config_override.h"         // Configuration overrides for user_config.h
+#endif
 #include "WebServer.h"
 
+
+
+
+#define CONFIG_FILE_SIGN       0xA5         // Configuration file signature
+#define CONFIG_FILE_XOR        0x5A         // Configuration file xor (0 = No Xor)
 // Functions
 
 
@@ -34,8 +43,6 @@ void setWiFiConfig(void);
 #include <ArduinoJson.h>
 #include <Hash.h>
 #include <ESP8266WebServer.h>
-
-#if defined(MCU_OTA)
 #include <dfu.h>
 #include <dfu-host.h>
 #include <dfu-cmd.h>
@@ -50,7 +57,6 @@ void setWiFiConfig(void);
 static int _setup_dfu(void);
 
 void _handle_Mcu_OTA(void);
-#endif
 
 
 #endif /* SRC_ARDUINOFIRMWAREESP_H_ */
