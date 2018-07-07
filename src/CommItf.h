@@ -54,19 +54,8 @@ public:
 private:
 
   int createPacket(tMsgPacket *_pck);
-
-  /*SPI*/
-  #if defined ESP_CH_SPI
-  void SPISlaveInit();
-  void SPISlaveWrite(uint8_t* _resPckt,int transfer_size);
-  #endif
-
-  /*Serial*/
-  #if defined ESP_CH_UART
   String readStringUntil(char);
   int timedRead();
-  #endif
-
 };
 
 extern CommItf CommunicationInterface;

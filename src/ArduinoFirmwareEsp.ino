@@ -2,6 +2,11 @@
 
 uint8_t stop_flash_rotate = 0;              // Allow flash configuration rotation
 int restart_flag = 0;                       // Sonoff restart flag
+byte web_log_index = 1;                     // Index in Web log buffer (should never be 0)
+byte reset_web_log_flag = 0;                // Reset web console log
+char log_data[LOGSZ];                       // Logging
+char web_log[WEB_LOG_SIZE] = {'\0'};        // Web log buffer
+char mqtt_data[MESSZ];                      // MQTT publish buffer and web page ajax buffer
 
 int ledState = LOW;             // used to set the LED state
 long previousMillis = 0;        // will store last time LED was updated

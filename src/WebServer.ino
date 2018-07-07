@@ -20,6 +20,12 @@
 #define D_UPLOAD_ERR_7 "Upload aborted"
 #define D_UPLOAD_ERR_8 "File invalid"
 #define D_UPLOAD_ERR_9 "File too large"
+#define D_UPLOAD "Upload"
+#define D_ENTER_COMMAND "Enter command"
+#define D_UPGRADE_STARTED "Upgrade started"
+#define D_RESTART_IN "Restart in"
+#define D_SECONDS "seconds"
+#define D_HTML_LANGUAGE "en"
 #define D_MQTT_PARAMETERS "MQTT parameters"
 #define D_MQTT_HOST "MQTT Host"
 #define D_MQTT_PORT "MQTT Port"
@@ -38,6 +44,7 @@
 #define D_USER "User"
 #define D_PORT "Port"
 #define D_HOSTNAME "Hostname"
+#define D_FILE "File"
 #define D_HOST "Host"
 #define D_TOPIC "Topic"
 #define D_PASSWORD "Password"
@@ -46,24 +53,51 @@
 #define D_AP2_SSID "AP2 SSId"
 #define D_AP2_PASSWORD "AP2 Password"
 #define D_ASTERIX "********"
+#define D_SUCCESSFUL "Successful"
+#define D_RESTARTING "Restarting"
+#define D_FIRMWARE_UPGRADE "Firmware Upgrade"
+#define D_UPLOAD_DONE "Upload done"
 
+#define D_CONFIGURE_MQTT "Configure MQTT"
+#define D_LOG_UPLOAD "UPL: "       // Upload
+#define D_LOG_COMMAND "CMD: "      // Command
+#define D_LOG_SERIAL "SER: "       // Serial
+#define D_LOG_HTTP "HTP: "         // HTTP webserver
+#define D_RECEIVED "Received"
+#define D_CONSOLE "Console"
+
+// "2017-03-07T11:08:02" - ISO8601:2004
+#define D_YEAR_MONTH_SEPARATOR "-"
+#define D_MONTH_DAY_SEPARATOR "-"
+#define D_DATE_TIME_SEPARATOR "T"
+#define D_HOUR_MINUTE_SEPARATOR ":"
+#define D_MINUTE_SECOND_SEPARATOR ":"
+
+const char S_LOG_HTTP[] PROGMEM = D_LOG_HTTP;
+const char S_FIRMWARE_UPGRADE[] PROGMEM = D_FIRMWARE_UPGRADE;
+const char S_CONFIGURE_MQTT[] PROGMEM = D_CONFIGURE_MQTT;
+const char S_SAVE_CONFIGURATION[] PROGMEM = D_SAVE_CONFIGURATION;
+const char S_CONSOLE[] PROGMEM = D_CONSOLE;
+
+const char HDR_CTYPE_XML[] PROGMEM = "text/xml";
 
 const char HTTP_HEAD[] PROGMEM =
-  "<!DOCTYPE html><html lang=\"en\" class=\"\">"
+  "<!DOCTYPE html><html lang=\"" D_HTML_LANGUAGE "\" class=\"\">"
   "<head>"
   "<meta charset='utf-8'>"
   "<meta name=\"viewport\" content=\"width=device-width,initial-scale=1,user-scalable=no\"/>"
   "<title>{h} - {v}</title>"
 
   "<script>"
-  "var cn;"
+  "var cn,x,lt;"
   "cn=180;"
+  "x=null;"                  // Allow for abortion
   "function eb(s){"
     "return document.getElementById(s);"  // Save code space
   "}"
   "function u(){"
     "if(cn>=0){"
-      "eb('t').innerHTML='Restart in '+cn+' seconds';"
+      "eb('t').innerHTML='" D_RESTART_IN " '+cn+' " D_SECONDS "';"
       "cn--;"
       "setTimeout(u,1000);"
     "}"
@@ -71,6 +105,30 @@ const char HTTP_HEAD[] PROGMEM =
   "function c(l){"
     "eb('s1').value=l.innerText||l.textContent;"
     "eb('p1').focus();"
+  "}"
+  "function la(p){"
+    "var a='';"
+    "if(la.arguments.length==1){"
+      "a=p;"
+      "clearTimeout(lt);"
+    "}"
+    "if(x!=null){x.abort();}"    // Abort if no response within 2 seconds (happens on restart 1)
+    "x=new XMLHttpRequest();"
+    "x.onreadystatechange=function(){"
+      "if(x.readyState==4&&x.status==200){"
+        "var s=x.responseText.replace(/{t}/g,\"<table style='width:100%'>\").replace(/{s}/g,\"<tr><th>\").replace(/{m}/g,\"</th><td>\").replace(/{e}/g,\"</td></tr>\").replace(/{c}/g,\"%'><div style='text-align:center;font-weight:\");"
+        "eb('l1').innerHTML=s;"
+      "}"
+    "};"
+    "x.open('GET','ay'+a,true);"
+    "x.send();"
+    "lt=setTimeout(la,2345);"
+  "}"
+  "function lb(p){"
+    "la('?d='+p);"
+  "}"
+  "function lc(p){"
+    "la('?t='+p);"
   "}";
 
 const char HTTP_HEAD_STYLE[] PROGMEM =
@@ -97,7 +155,6 @@ const char HTTP_HEAD_STYLE[] PROGMEM =
   "<body>"
   "<div style='text-align:left;display:inline-block;min-width:340px;'>"
   "<div style='text-align:center;'><h3>{ha Arduino Uno Wifi</h3><h2>{h}</h2></div>";
-
 
 const char HTTP_FORM_MQTT[] PROGMEM =
   "<fieldset><legend><b>&nbsp;" D_MQTT_PARAMETERS "&nbsp;</b></legend><form method='get' action='sv'>"
@@ -147,6 +204,49 @@ const char HTTP_SCRIPT_INFO_END[] PROGMEM =
   "}"
   "</script>";
 
+
+const char HTTP_SCRIPT_CONSOL[] PROGMEM =
+  "var sn=0;"                    // Scroll position
+  "var id=0;"                    // Get most of weblog initially
+  "function l(p){"               // Console log and command service
+    "var c,o,t;"
+    "clearTimeout(lt);"
+    "o='';"
+    "t=eb('t1');"
+    "if(p==1){"
+      "c=eb('c1');"
+      "o='&c1='+encodeURIComponent(c.value);"
+      "c.value='';"
+      "t.scrollTop=sn;"
+    "}"
+    "if(t.scrollTop>=sn){"       // User scrolled back so no updates
+      "if(x!=null){x.abort();}"  // Abort if no response within 2 seconds (happens on restart 1)
+      "x=new XMLHttpRequest();"
+      "x.onreadystatechange=function(){"
+        "if(x.readyState==4&&x.status==200){"
+          "var z,d;"
+          "d=x.responseXML;"
+          "id=d.getElementsByTagName('i')[0].childNodes[0].nodeValue;"
+          "if(d.getElementsByTagName('j')[0].childNodes[0].nodeValue==0){t.value='';}"
+          "z=d.getElementsByTagName('l')[0].childNodes;"
+          "if(z.length>0){t.value+=decodeURIComponent(z[0].nodeValue);}"
+          "t.scrollTop=99999;"
+          "sn=t.scrollTop;"
+        "}"
+      "};"
+      "x.open('GET','ax?c2='+id+o,true);"
+      "x.send();"
+    "}"
+    "lt=setTimeout(l,2345);"
+    "return false;"
+  "}"
+  "</script>";
+const char HTTP_FORM_CMND[] PROGMEM =
+  "<br/><textarea readonly id='t1' name='t1' cols='340' wrap='off'></textarea><br/><br/>"
+  "<form method='get' onsubmit='return l(1);'>"
+  "<input id='c1' name='c1' placeholder='" D_ENTER_COMMAND "' autofocus><br/>"
+  //  "<br/><button type='submit'>Send command</button>"
+  "</form>";
 const char HTTP_FORM_UPG[] PROGMEM =
   "<div id='f1' name='f1' style='display:block;'>"
   "<fieldset><legend><b>&nbsp;Upgrade by file upload&nbsp;</b></legend>";
@@ -347,7 +447,7 @@ void SettingsNewFree()
 void HandleUpgradeFirmware()
 {
 //   if (HttpUser()) { return; }
-//   AddLog_P(LOG_LEVEL_DEBUG, S_LOG_HTTP, S_FIRMWARE_UPGRADE);
+  AddLog_P(LOG_LEVEL_DEBUG, S_LOG_HTTP, S_FIRMWARE_UPGRADE);
 
   String page = FPSTR(HTTP_HEAD);
   page.replace(F("{v}"), "Firmware Upgrade");
@@ -381,8 +481,8 @@ void HandleUploadLoop()
       return;
     }
     SettingsSave();  // Free flash for upload
-    // snprintf_P(log_data, sizeof(log_data), PSTR(D_LOG_UPLOAD D_FILE " %s ..."), upload.filename.c_str());
-    // AddLog(LOG_LEVEL_INFO);
+    snprintf_P(log_data, sizeof(log_data), PSTR(D_LOG_UPLOAD D_FILE " %s ..."), upload.filename.c_str());
+    AddLog(LOG_LEVEL_INFO);
     if (upload_file_type) {
       SettingsNewFree();
       if (!(settings_new = (uint8_t *)malloc(sizeof(Settings)))) {
@@ -454,8 +554,8 @@ void HandleUploadLoop()
       }
     }
     if (!upload_error) {
-    //   snprintf_P(log_data, sizeof(log_data), PSTR(D_LOG_UPLOAD D_SUCCESSFUL " %u bytes. " D_RESTARTING), upload.totalSize);
-    //   AddLog(LOG_LEVEL_INFO);
+      snprintf_P(log_data, sizeof(log_data), PSTR(D_LOG_UPLOAD D_SUCCESSFUL " %u bytes. " D_RESTARTING), upload.totalSize);
+      AddLog(LOG_LEVEL_INFO);
     }
   } else if (UPLOAD_FILE_ABORTED == upload.status) {
     restart_flag = 0;
@@ -472,7 +572,7 @@ void HandleUpgradeFirmwareStart()
 //   if (HttpUser()) { return; }
   char svalue[100];
 
-//   AddLog_P(LOG_LEVEL_DEBUG, PSTR(D_LOG_HTTP D_UPGRADE_STARTED));
+  AddLog_P(LOG_LEVEL_DEBUG, PSTR(D_LOG_HTTP D_UPGRADE_STARTED));
 //   WifiConfigCounter();
 
   char tmp[100];
@@ -491,7 +591,7 @@ void HandleUpgradeFirmwareStart()
 void HandleUploadDone()
 {
 //   if (HttpUser()) { return; }
-//   AddLog_P(LOG_LEVEL_DEBUG, PSTR(D_LOG_HTTP D_UPLOAD_DONE));
+  AddLog_P(LOG_LEVEL_DEBUG, PSTR(D_LOG_HTTP D_UPLOAD_DONE));
 
   char error[100];
 
@@ -519,8 +619,8 @@ void HandleUploadDone()
         snprintf_P(error, sizeof(error), PSTR("Upload error code %d"), upload_error);
     }
     page += error;
-    // snprintf_P(log_data, sizeof(log_data), PSTR(D_UPLOAD ": %s"), error);
-    // AddLog(LOG_LEVEL_DEBUG);
+    snprintf_P(log_data, sizeof(log_data), PSTR(D_UPLOAD ": %s"), error);
+    AddLog(LOG_LEVEL_DEBUG);
     // stop_flash_rotate = Settings.flag.stop_flash_rotate;
   } else {
     page += F("green'>Successful</font></b><br/>");
@@ -537,7 +637,7 @@ void HandleUploadDone()
 void HandleMqttConfiguration()
 {
   // if (HttpUser()) { return; }
-  // AddLog_P(LOG_LEVEL_DEBUG, S_LOG_HTTP, S_CONFIGURE_MQTT);
+  AddLog_P(LOG_LEVEL_DEBUG, S_LOG_HTTP, S_CONFIGURE_MQTT);
 
   String page = FPSTR(HTTP_HEAD);
   page.replace(F("{v}"), "Configure MQTT");
@@ -566,7 +666,7 @@ void HandleSaveSettings()
   char stemp2[TOPSZ];
   String result = "";
 
-  // AddLog_P(LOG_LEVEL_DEBUG, S_LOG_HTTP, S_SAVE_CONFIGURATION);
+  AddLog_P(LOG_LEVEL_DEBUG, S_LOG_HTTP, S_SAVE_CONFIGURATION);
 
   char tmp[100];
   WebGetArg("w", tmp, sizeof(tmp));  // Returns "5,1" where 5 is config type and 1 is restart flag
@@ -723,6 +823,80 @@ void HandleWifiConfiguration(){
   ShowPage(page);
 }
 
+
+void HandleConsole()
+{
+  // if (HttpUser()) { return; }
+  AddLog_P(LOG_LEVEL_DEBUG, S_LOG_HTTP, S_CONSOLE);
+
+  String page = FPSTR(HTTP_HEAD);
+  page.replace(F("{v}"), FPSTR(S_CONSOLE));
+  page += FPSTR(HTTP_HEAD_STYLE);
+  page.replace(F("</script>"), FPSTR(HTTP_SCRIPT_CONSOL));
+  page.replace(F("<body>"), F("<body onload='l()'>"));
+  page += FPSTR(HTTP_FORM_CMND);
+  page += FPSTR(HTTP_BTN_MAIN);
+  ShowPage(page);
+}
+
+
+void HandleAjaxConsoleRefresh()
+{
+  // if (HttpUser()) { return; }
+  char svalue[INPUT_BUFFER_SIZE];  // Large to serve Backlog
+  byte cflg = 1;
+  byte counter = 0;                // Initial start, should never be 0 again
+
+  WebGetArg("c1", svalue, sizeof(svalue));
+  if (strlen(svalue)) {
+    snprintf_P(log_data, sizeof(log_data), PSTR(D_LOG_COMMAND "%s"), svalue);
+    AddLog(LOG_LEVEL_INFO);
+    // ExecuteCommand(svalue);
+  }
+
+  WebGetArg("c2", svalue, sizeof(svalue));
+  if (strlen(svalue)) { counter = atoi(svalue); }
+
+  byte last_reset_web_log_flag = reset_web_log_flag;
+  String message = F("}9");  // Cannot load mqtt_data here as <> will be encoded by replacements below
+  if (!reset_web_log_flag) {
+    counter = 0;
+    reset_web_log_flag = 1;
+  }
+  if (counter != web_log_index) {
+    if (!counter) {
+      counter = web_log_index;
+      cflg = 0;
+    }
+    do {
+      char* tmp;
+      size_t len;
+      GetLog(counter, &tmp, &len);
+      if (len) {
+        if (cflg) {
+          message += F("\n");
+        } else {
+          cflg = 1;
+        }
+        strlcpy(mqtt_data, tmp, len);
+        message += mqtt_data;
+      }
+      counter++;
+      if (!counter) { counter++; } // Skip 0 as it is not allowed
+    } while (counter != web_log_index);
+    // XML encoding to fix blank console log in concert with javascript decodeURIComponent
+    message.replace(F("%"), F("%25"));  // Needs to be done first as otherwise the % in %26 will also be converted
+    message.replace(F("&"), F("%26"));
+    message.replace(F("<"), F("%3C"));
+    message.replace(F(">"), F("%3E"));
+  }
+  snprintf_P(mqtt_data, sizeof(mqtt_data), PSTR("<r><i>%d</i><j>%d</j><l>"), web_log_index, last_reset_web_log_flag);
+  message.replace(F("}9"), mqtt_data);  // Save to load here
+  message += F("</l></r>");
+  server.send(200, FPSTR(HDR_CTYPE_XML), message);
+}
+
+
 void PollDnsWebserver()
 {
   // if (DnsServer) { DnsServer->processNextRequest(); }
@@ -742,6 +916,8 @@ void initWebServer(){
   server.on("/mq", HandleMqttConfiguration);
   server.on("/sv", HandleSaveSettings);
   server.on("/w0", HandleWifiConfiguration);
+  server.on("/cs", HandleConsole);
+  server.on("/ax", HandleAjaxConsoleRefresh);
 	server.onNotFound([](){
 		server.send(404, "text/plain", "FileNotFound");
 	});

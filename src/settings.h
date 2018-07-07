@@ -12,6 +12,22 @@
 #include <ESP8266WiFi.h>
 
 #define PARAM8_SIZE  18                    // Number of param bytes
+
+struct TIME_T {
+  uint8_t       second;
+  uint8_t       minute;
+  uint8_t       hour;
+  uint8_t       day_of_week;               // sunday is day 1
+  uint8_t       day_of_month;
+  uint8_t       month;
+  char          name_of_month[4];
+  uint16_t      day_of_year;
+  uint16_t      year;
+  unsigned long days;
+  unsigned long valid;
+} RtcTime;
+
+
 typedef union {                            // Restricted by MISRA-C Rule 18.4 but so usefull...
   uint32_t data;                           // Allow bit manipulation using SetOption
   struct {
@@ -39,6 +55,7 @@ struct SYSCFG {
   char          mqtt_topic[33];
   char          mqtt_fulltopic[100];
   uint32_t      ip_address[4];
+  byte          weblog_level;
 } Settings;
 
 

@@ -125,6 +125,16 @@ void SettingsDefaultSet2(){
 	strlcpy(Settings.sta_pwd[0], STA_PASS1, sizeof(Settings.sta_pwd[0]));
 	strlcpy(Settings.sta_ssid[1], STA_SSID2, sizeof(Settings.sta_ssid[1]));
 	strlcpy(Settings.sta_pwd[1], STA_PASS2, sizeof(Settings.sta_pwd[1]));
+	strlcpy(Settings.hostname, WIFI_HOSTNAME, sizeof(Settings.hostname));
+
+	Settings.mqtt_port = MQTT_PORT;
+	strlcpy(Settings.mqtt_host, MQTT_HOST, sizeof(Settings.mqtt_host));
+	strlcpy(Settings.mqtt_client, MQTT_CLIENT_ID, sizeof(Settings.mqtt_client));
+	strlcpy(Settings.mqtt_user, MQTT_USER, sizeof(Settings.mqtt_user));
+	strlcpy(Settings.mqtt_pwd, MQTT_PASS, sizeof(Settings.mqtt_pwd));
+	strlcpy(Settings.mqtt_topic, MQTT_TOPIC, sizeof(Settings.mqtt_topic));
+
+	Settings.weblog_level = WEB_LOG_LEVEL;
 }
 
 void SettingsLoad(){
@@ -157,7 +167,6 @@ void SettingsErase(uint8_t type)
 	}
 }
 
-// Copied from 2.4.0 as 2.3.0 is incomplete
 bool SettingsEraseConfig(void) {
 	const size_t cfgSize = 0x4000;
 	size_t cfgAddr = ESP.getFlashChipSize() - cfgSize;

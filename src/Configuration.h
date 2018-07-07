@@ -58,6 +58,10 @@ DEALINGS IN THE SOFTWARE
 #define MQTT_PASS              "mqttpass"        // [MqttPassword] MQTT password
 #define MQTT_CLIENT_ID         "UNO_%06X"       // [MqttClient] Also fall back topic using Chip Id = last 6 characters of MAC address
 #define MQTT_TOPIC             PROJECT           // [Topic] (unique) MQTT device topic
-
 #define MQTT_FULLTOPIC         "%prefix%/%topic%/" // [FullTopic] Subscribe and Publish full topic name - Legacy topic
+
+
+#define SERIAL_LOG_LEVEL       LOG_LEVEL_INFO    // [SerialLog] (LOG_LEVEL_NONE, LOG_LEVEL_ERROR, LOG_LEVEL_INFO, LOG_LEVEL_DEBUG, LOG_LEVEL_DEBUG_MORE)
+#define WEB_LOG_LEVEL          LOG_LEVEL_INFO    // [WebLog] (LOG_LEVEL_NONE, LOG_LEVEL_ERROR, LOG_LEVEL_INFO, LOG_LEVEL_DEBUG, LOG_LEVEL_DEBUG_MORE)
+
 #endif
