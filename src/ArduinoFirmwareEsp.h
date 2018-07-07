@@ -39,8 +39,6 @@ void wifiLed(void);
 
 void setWiFiConfig(void);
 
-#include <FS.h>
-#include <ArduinoJson.h>
 #include <Hash.h>
 #include <ESP8266WebServer.h>
 #include <dfu.h>

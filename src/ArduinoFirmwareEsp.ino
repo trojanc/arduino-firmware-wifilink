@@ -33,6 +33,92 @@ void loop() {
   delay(0);
 }
 
+
+void MakeValidMqtt(byte option, char* str)
+{
+// option 0 = replace by underscore
+// option 1 = delete character
+  uint16_t i = 0;
+  while (str[i] > 0) {
+//        if ((str[i] == '/') || (str[i] == '+') || (str[i] == '#') || (str[i] == ' ')) {
+    if ((str[i] == '+') || (str[i] == '#') || (str[i] == ' ')) {
+      if (option) {
+        uint16_t j = i;
+        while (str[j] > 0) {
+          str[j] = str[j +1];
+          j++;
+        }
+        i--;
+      } else {
+        str[i] = '_';
+      }
+    }
+    i++;
+  }
+}
+
+char* Format(char* output, const char* input, int size)
+{
+  char *token;
+  uint8_t digits = 0;
+
+  if (strstr(input, "%")) {
+    strlcpy(output, input, size);
+    token = strtok(output, "%");
+    if (strstr(input, "%") == input) {
+      output[0] = '\0';
+    } else {
+      token = strtok(NULL, "");
+    }
+    if (token != NULL) {
+      digits = atoi(token);
+      if (digits) {
+        if (strchr(token, 'd')) {
+          snprintf_P(output, size, PSTR("%s%c0%dd"), output, '%', digits);
+          snprintf_P(output, size, output, ESP.getChipId() & 0x1fff);       // %04d - short chip ID in dec, like in hostname
+        } else {
+          snprintf_P(output, size, PSTR("%s%c0%dX"), output, '%', digits);
+          snprintf_P(output, size, output, ESP.getChipId());                // %06X - full chip ID in hex
+        }
+      } else {
+        if (strchr(token, 'd')) {
+          snprintf_P(output, size, PSTR("%s%d"), output, ESP.getChipId());  // %d - full chip ID in dec
+          digits = 8;
+        }
+      }
+    }
+  }
+  if (!digits) strlcpy(output, input, size);
+  return output;
+}
+
+
+// void MqttPublishPrefixTopic_P(uint8_t prefix, const char* subtopic, boolean retained)
+// {
+// /* prefix 0 = cmnd using subtopic
+//  * prefix 1 = stat using subtopic
+//  * prefix 2 = tele using subtopic
+//  * prefix 4 = cmnd using subtopic or RESULT
+//  * prefix 5 = stat using subtopic or RESULT
+//  * prefix 6 = tele using subtopic or RESULT
+//  */
+//   char romram[33];
+//   char stopic[TOPSZ];
+
+//   snprintf_P(romram, sizeof(romram), ((prefix > 3) && !Settings.flag.mqtt_response) ? S_RSLT_RESULT : subtopic);
+//   for (byte i = 0; i < strlen(romram); i++) {
+//     romram[i] = toupper(romram[i]);
+//   }
+//   prefix &= 3;
+//   GetTopic_P(stopic, prefix, mqtt_topic, romram);
+//   MqttPublish(stopic, retained);
+// }
+
+// void MqttPublishPrefixTopic_P(uint8_t prefix, const char* subtopic)
+// {
+//   MqttPublishPrefixTopic_P(prefix, subtopic, false);
+// }
+
 void initMDNS(){
 
   MDNS.begin(Settings.hostname);

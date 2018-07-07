@@ -25,11 +25,9 @@ DEALINGS IN THE SOFTWARE
 #ifndef H_CONFIGURATION_H
 #define H_CONFIGURATION_H
 
-#include <Arduino.h>
-#include <FS.h>
-#include <ArduinoJson.h>
-
 #define VERSION                0x00000010   // 0.0.1
+#define WIFI_HOSTNAME          "%s-%04d"    // Expands to <MQTT_TOPIC>-<last 4 decimal chars of MAC address>
+
 // #define USE_CONFIG_OVERRIDE                      // Uncomment to use user_config_override.h file. See README.md
 
 /*********************************************************************************************\
@@ -54,19 +52,12 @@ DEALINGS IN THE SOFTWARE
 #define STA_SSID2              ""                // [Ssid2] Optional alternate AP Wifi SSID
 #define STA_PASS2              ""                // [Password2] Optional alternate AP Wifi password
 
+#define MQTT_HOST              ""                // [MqttHost]
+#define MQTT_PORT              1883              // [MqttPort] MQTT port (10123 on CloudMQTT)
+#define MQTT_USER              "mqttuser"        // [MqttUser] MQTT user
+#define MQTT_PASS              "mqttpass"        // [MqttPassword] MQTT password
+#define MQTT_CLIENT_ID         "UNO_%06X"       // [MqttClient] Also fall back topic using Chip Id = last 6 characters of MAC address
+#define MQTT_TOPIC             PROJECT           // [Topic] (unique) MQTT device topic
 
-#define EMPTY ""
-#define JSONEMPTY "{}"
-#define MAXVALUESIZE 256
-#define CONFIGFILENAME "/config.json"
-
-class Configuration {
-
-	public:
-		bool setParam(String param, String value);
-		String getParam(String param);
-};
-
-extern Configuration Config;
-
+#define MQTT_FULLTOPIC         "%prefix%/%topic%/" // [FullTopic] Subscribe and Publish full topic name - Legacy topic
 #endif
