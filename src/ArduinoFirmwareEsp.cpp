@@ -35,15 +35,10 @@ void setup() {
 void loop() {
 
   ArduinoOTA.handle();
-  CommunicationLogic.handle();
+//  CommunicationLogic.handle();
   handleWebServer();
-  wifiLed();
-
-  #if defined(MCU_OTA)
+//  wifiLed();
   _handle_Mcu_OTA();
-  #endif
-
-
 }
 
 void initMDNS(){
@@ -100,6 +95,7 @@ void wifiLed(){
 }
 
 void setWiFiConfig(){
+
 
   //WiFi mode is remembered by the esp sdk
   if (WiFi.getMode() != WIFI_STA) {

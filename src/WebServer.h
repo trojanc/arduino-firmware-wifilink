@@ -11,6 +11,7 @@
 #include <Arduino.h>
 #include <FS.h>
 #include <ESP8266mDNS.h>
+#include <core_version.h>
 
 #include "firmware.h"
 #include "CommLgc.h"

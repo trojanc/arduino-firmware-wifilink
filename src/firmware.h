@@ -11,6 +11,8 @@
 #include <Arduino.h>
 #include <ESP8266WebServer.h>
 
+#define TOPSZ                  100          // Max number of characters in topic string
+
 extern ESP8266WebServer server;
 extern String dhcp;
 extern String staticIP_param;
