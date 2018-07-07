@@ -6,12 +6,6 @@ int restart_flag = 0;                       // Sonoff restart flag
 int ledState = LOW;             // used to set the LED state
 long previousMillis = 0;        // will store last time LED was updated
 long ap_interval = 50;         //blink interval in ap mode
-IPAddress default_IP(192,168,240,1);  //defaul IP Address
-String HOSTNAME = DEF_HOSTNAME;
-String staticIP_param;
-String netmask_param;
-String gateway_param;
-String dhcp = "on";
 
 ESP8266WebServer server(80);    //server UI
 
@@ -23,7 +17,6 @@ void setup() {
   initMDNS();
   CommunicationLogic.begin();
   SPIFFS.begin();
-  initHostname();
   setupWifi();
   initWebServer();                 //UI begin
 }
@@ -32,30 +25,27 @@ void loop() {
 
   ArduinoOTA.handle();
 //  CommunicationLogic.handle();
-  handleWebServer();
+  PollDnsWebserver();
 //  wifiLed();
-  _handle_Mcu_OTA();
+  // _handle_Mcu_OTA();
+
+  //  yield();     // yield == delay(0), delay contains yield, auto yield in loop
+  delay(0);
 }
 
 void initMDNS(){
 
-  MDNS.begin(HOSTNAME.c_str());
-  MDNS.setInstanceName(HOSTNAME);
+  MDNS.begin(Settings.hostname);
+  MDNS.setInstanceName(Settings.hostname);
   MDNS.addServiceTxt("arduino", "tcp", "fw_name", FW_NAME);
   MDNS.addServiceTxt("arduino", "tcp", "fw_version", FW_VERSION);
+  MDNS.addService("http", "tcp", 80);
 
 }
 
-void initHostname(){
-  //retrieve user defined hostname
-  String tmpHostname = Config.getParam("hostname");
-  if( tmpHostname!="" )
-    HOSTNAME = tmpHostname;
-  WiFi.hostname(HOSTNAME);
-
-}
 
 void setupWifi(){
+  WiFi.hostname(Settings.hostname);
 	WiFi.begin(Settings.sta_ssid[0], Settings.sta_pwd[0]);
 }
 

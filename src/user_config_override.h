@@ -24,14 +24,14 @@
 #warning **** user_config_override.h: Using Settings from this File ****
 // -- Master parameter control --------------------
 #undef  CFG_HOLDER
-#define CFG_HOLDER        0x20161211             // [Reset 1] Change this value to load SECTION1 configuration parameters to flash
+#define CFG_HOLDER        0x20161212             // [Reset 1] Change this value to load SECTION1 configuration parameters to flash
 
 // -- Setup your own Wifi settings  ---------------
 #undef STA_SSID1
-#define STA_SSID1              ""
+#define STA_SSID1              "TrojanCWIFI"
 
 #undef STA_PASS1
-#define STA_PASS1              ""
+#define STA_PASS1              "TrojanC2102"
 
 #undef STA_SSID2
 #define STA_SSID2              ""

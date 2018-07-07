@@ -10,6 +10,17 @@
 #define STR_HELPER(x) #x
 #define STR(x) STR_HELPER(x)
 
+// TODO move to language file
+#define D_UPLOAD_ERR_1 "No file selected"
+#define D_UPLOAD_ERR_2 "Not enough space"
+#define D_UPLOAD_ERR_3 "Magic byte is not 0xE9"
+#define D_UPLOAD_ERR_4 "Program flash size is larger than real flash size"
+#define D_UPLOAD_ERR_5 "Upload buffer miscompare"
+#define D_UPLOAD_ERR_6 "Upload failed. Enable logging 3"
+#define D_UPLOAD_ERR_7 "Upload aborted"
+#define D_UPLOAD_ERR_8 "File invalid"
+#define D_UPLOAD_ERR_9 "File too large"
+
 const char HTTP_HEAD[] PROGMEM =
   "<!DOCTYPE html><html lang=\"en\" class=\"\">"
   "<head>"
@@ -243,6 +254,8 @@ void HandleInformation(){
   func += F("}1Program Flash Size}2"); func += String(ESP.getFlashChipSize() / 1024); func += F("kB");
   func += F("}1Program Size}2"); func += String(ESP.getSketchSize() / 1024); func += F("kB");
   func += F("}1Free Program Space}2"); func += String(ESP.getFreeSketchSpace() / 1024); func += F("kB");
+  func += F("}1Free Program upload}2"); func += String(( (ESP.getFreeSketchSpace() - 0x1000) & 0xFFFFF000) / 1024); func += F("kB");
+ ;
   func += F("}1Free Memory}2"); func += String(freeMem / 1024); func += F("kB");
   func += F("</td></tr></table>");
   func += FPSTR(HTTP_SCRIPT_INFO_END);
@@ -303,7 +316,6 @@ void HandleUploadLoop()
     if (!upload_file_type) { Update.end(); }
     return;
   }
-
   HTTPUpload& upload = server.upload();
 
   if (UPLOAD_FILE_START == upload.status) {
@@ -411,7 +423,7 @@ void HandleUpgradeFirmwareStart()
   String page = FPSTR(HTTP_HEAD);
   page.replace(F("{v}"), "Information");
   page += FPSTR(HTTP_HEAD_STYLE);
-  page += F("<div style='text-align:center;'><b>" D_UPGRADE_STARTED " ...</b></div>");
+  page += F("<div style='text-align:center;'><b>Upgrade Started ...</b></div>");
   page += FPSTR(HTTP_MSG_RSTRT);
   page += FPSTR(HTTP_BTN_MAIN);
   ShowPage(page);
@@ -448,7 +460,7 @@ void HandleUploadDone()
       case 8: strncpy_P(error, PSTR(D_UPLOAD_ERR_8), sizeof(error)); break;
       case 9: strncpy_P(error, PSTR(D_UPLOAD_ERR_9), sizeof(error)); break;
       default:
-        snprintf_P(error, sizeof(error), PSTR(D_UPLOAD_ERROR_CODE " %d"), upload_error);
+        snprintf_P(error, sizeof(error), PSTR("Upload error code %d"), upload_error);
     }
     page += error;
     // snprintf_P(log_data, sizeof(log_data), PSTR(D_UPLOAD ": %s"), error);
@@ -465,46 +477,10 @@ void HandleUploadDone()
   ShowPage(page);
 }
 
-// uint8_t MAC_array[6];	 //mac_address
-// char macAddress[12];		//mac_address
-String newSSID_param;
-String newPASSWORD_param;
-const char* newSSID_par = "";
-const char* newPASSWORD_par = "";
-// IPAddress default_IP(192,168,240,1);	//defaul IP Address
-bool SERVER_STOP = false;			 //check stop server
-
-// extern "C" void system_set_os_print(uint8 onoff);		//TODO to test without
-// extern "C" void ets_install_putc1(void* routine);
-int tot = 0;
-bool connect_wifi = false;
-//String HOSTNAME = "arduino";
-
-
-void handleWebServer(){
-	if(connect_wifi){
-		ETS_SPI_INTR_DISABLE();
-		WiFi.begin(newSSID_param.c_str(),newPASSWORD_param.c_str());
-		delay(500);	// VB: exactly 500, and here!
-		connect_wifi = false;
-		ETS_SPI_INTR_ENABLE();
-	}
-	if(CommunicationLogic.UI_alert){			//stop UI SERVER
-		if(!SERVER_STOP){
-			server.stop();
-			SERVER_STOP = true;
-		}
-	}
-	else{
-		server.handleClient();
-	}
-}
-
-void clearStaticIP() {
-	dhcp = "on";
-	Config.setParam("staticIP", "0.0.0.0");
-	Config.setParam("netMask", "255.255.255.0");
-	Config.setParam("gatewayIP", "192.168.1.1");
+void PollDnsWebserver()
+{
+  // if (DnsServer) { DnsServer->processNextRequest(); }
+  server.handleClient();
 }
 
 void initWebServer(){
