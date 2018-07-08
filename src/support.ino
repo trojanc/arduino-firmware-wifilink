@@ -35,6 +35,9 @@ boolean WifiConfigCounter()
 
 void WifiBegin(uint8_t flag)
 {
+
+   snprintf_P(log_data, sizeof(log_data), PSTR(D_LOG_WIFI "WifiBegin %d"),flag);
+  AddLog(LOG_LEVEL_DEBUG);
   const char kWifiPhyMode[] = " BGN";
   WiFi.disconnect(true);    // Delete SDK wifi config
   delay(200);
@@ -77,9 +80,11 @@ void OsWatchTicker()
   unsigned long t = millis();
   unsigned long last_run = abs(t - oswatch_last_loop_time);
   if (last_run >= (OSWATCH_RESET_TIME * 1000)) {
+    snprintf_P(log_data, sizeof(log_data), PSTR("WDT Reset"));
+    AddLog(LOG_LEVEL_DEBUG);
     // RtcSettings.oswatch_blocked_loop = 1;
     // RtcSettingsSave();
-    ESP.reset();  // hard reset
+    // ESP.reset();  // hard reset
   }
 }
 
@@ -147,8 +152,24 @@ boolean WifiWpsConfigBegin(void)
   return true;
 }
 
+void WifiConnect()
+{
+  snprintf_P(log_data, sizeof(log_data), PSTR(D_LOG_WIFI "WifiConnect"));
+  AddLog(LOG_LEVEL_DEBUG);
+  
+  WiFi.persistent(false);   // Solve possible wifi init errors
+  wifi_status = 0;
+  wifi_retry_init = WIFI_RETRY_OFFSET_SEC + ((ESP.getChipId() & 0xF) * 2);
+  wifi_retry = wifi_retry_init;
+  wifi_counter = 1;
+}
+
 void WifiCheckIp()
 {
+
+  snprintf_P(log_data, sizeof(log_data), PSTR(D_LOG_WIFI "WifiCheckIp %d"), WiFi.status());
+  AddLog(LOG_LEVEL_DEBUG);
+
   if ((WL_CONNECTED == WiFi.status()) && (static_cast<uint32_t>(WiFi.localIP()) != 0)) {
     wifi_counter = WIFI_CHECK_SEC;
     wifi_retry = wifi_retry_init;
@@ -217,6 +238,8 @@ void WifiCheckIp()
 void WifiCheck(uint8_t param)
 {
   wifi_counter--;
+   snprintf_P(log_data, sizeof(log_data), PSTR(D_LOG_WIFI "Wifi Check %d %d"),param, wifi_counter);
+  AddLog(LOG_LEVEL_DEBUG);
   switch (param) {
   case WIFI_SMARTCONFIG:
   case WIFI_MANAGER:
@@ -224,6 +247,8 @@ void WifiCheck(uint8_t param)
     WifiConfig(param);
     break;
   default:
+    snprintf_P(log_data, sizeof(log_data), PSTR(D_LOG_WIFI "Wifi Check default %d %d"), wifi_config_counter, wifi_config_type);
+    AddLog(LOG_LEVEL_DEBUG);
     if (wifi_config_counter) {
       wifi_config_counter--;
       wifi_counter = wifi_config_counter +5;
@@ -276,6 +301,9 @@ void WifiCheck(uint8_t param)
 
 void WifiConfig(uint8_t type)
 {
+
+   snprintf_P(log_data, sizeof(log_data), PSTR(D_LOG_WIFI "Wifi Config %d"),type);
+  AddLog(LOG_LEVEL_DEBUG);
   if (!wifi_config_type) {
     if (type >= WIFI_RETRY) {  // WIFI_RETRY and WIFI_WAIT
       return;

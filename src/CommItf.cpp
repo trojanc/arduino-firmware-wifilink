@@ -43,7 +43,7 @@ CommItf::CommItf(){
 
 bool CommItf::begin(){
 
-	Serial.begin(BAUDRATE_COMMUNICATION);
+	Serial.begin(APP_BAUDRATE);
 	while(!Serial);
 	#ifdef DEBUG
 	Serial1.begin(BAUDRATE_DEBUG);

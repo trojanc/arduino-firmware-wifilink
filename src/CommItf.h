@@ -27,7 +27,7 @@ DEALINGS IN THE SOFTWARE
 
 #include "Arduino.h"
 #include "utility/wifi_utils.h"
-#include "config.h"
+#include "Configuration.h"
 // enum CHANNEL {
 //   CH_SERIAL = 0,
 //   CH_SPI

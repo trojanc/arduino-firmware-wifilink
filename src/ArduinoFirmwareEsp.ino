@@ -84,15 +84,17 @@ void setup() {
 	snprintf_P(my_hostname, sizeof(my_hostname)-1, Settings.hostname);
 	}
 
+  WifiConnect();
 
-	// _setup_dfu();
+
+	_setup_dfu();
 	pinMode(WIFI_LED, OUTPUT);      //initialize wifi LED
 	ArduinoOTA.begin();             //OTA ESP
 	//   CommunicationLogic.begin();
 }
 
 void loop() {
-
+  OsWatchLoop();
   // XdrvCall(FUNC_LOOP);
   MqttLoop();
 
@@ -424,7 +426,7 @@ void _handle_Mcu_OTA(void)
       _finalize_dfu();
       delay(80);
       //open Serial Communication
-      Serial.begin(BAUDRATE_COMMUNICATION);
+      Serial.begin(APP_BAUDRATE);
       break;
     case DFU_CONTINUE:
       break;

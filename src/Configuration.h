@@ -25,6 +25,33 @@ DEALINGS IN THE SOFTWARE
 #ifndef H_CONFIGURATION_H
 #define H_CONFIGURATION_H
 
+#define BUILD_DATE  __DATE__ " " __TIME__
+#define FW_VERSION  "1.1.0"
+#define FW_NAME     "wifilink"
+#define MCU_OTA
+
+/*
+ * Enable/Disable Debug
+ */
+
+//#define DEBUG
+//#define BAUDRATE_DEBUG 115200
+
+/*
+ * Define board hostname
+ */
+
+#define DEF_HOSTNAME "arduino"
+
+/*
+ * Defines the communication channel between microcontroller
+ * and esp82266, with concerning parameters
+ */
+
+//Arduino UNO WIFI DEV. EDITION configuration parameters
+#define BOARDMODEL "UNOWIFIDEVED"
+#define ESP_CH_UART
+#define SSIDNAME "Arduino-Uno-WiFi"
 #define VERSION                0x00000010   // 0.0.1
 #define WIFI_HOSTNAME          "%s-%04d"    // Expands to <MQTT_TOPIC>-<last 4 decimal chars of MAC address>
 
@@ -73,5 +100,6 @@ DEALINGS IN THE SOFTWARE
 #define WEB_LOG_LEVEL          LOG_LEVEL_INFO    // [WebLog] (LOG_LEVEL_NONE, LOG_LEVEL_ERROR, LOG_LEVEL_INFO, LOG_LEVEL_DEBUG, LOG_LEVEL_DEBUG_MORE)
 
 #define APP_BAUDRATE           115200            // Default serial baudrate
+// #define APP_BAUDRATE           230400
 #define APP_SLEEP              0                 // [Sleep] Sleep time to lower energy consumption (0 = Off, 1 - 250 mSec)
 #endif
