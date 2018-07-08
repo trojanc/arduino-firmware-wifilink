@@ -60,6 +60,7 @@ struct SYSCFG {
   uint32_t      ip_address[4];
   byte          weblog_level;
   uint16_t      tele_period;
+  byte          sta_active;
 } Settings;
 
 

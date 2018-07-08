@@ -1,6 +1,50 @@
 
 byte oswatch_blocked_loop = 0;
 
+
+/*********************************************************************************************\
+ * Wifi
+\*********************************************************************************************/
+
+#define WIFI_CONFIG_SEC        180  // seconds before restart
+#define WIFI_CHECK_SEC         20   // seconds
+#define WIFI_RETRY_OFFSET_SEC  20   // seconds
+uint8_t wifi_config_type = 0;
+
+
+void WifiConfig(uint8_t type)
+{
+  if (!wifi_config_type) {
+    if (type >= WIFI_RETRY) {  // WIFI_RETRY and WIFI_WAIT
+      return;
+    }
+    WiFi.disconnect();        // Solve possible Wifi hangs
+    wifi_config_type = type;
+    wifi_config_counter = WIFI_CONFIG_SEC;   // Allow up to WIFI_CONFIG_SECS seconds for phone to provide ssid/pswd
+    wifi_counter = wifi_config_counter +5;
+    blinks = 1999;
+    if (WIFI_RESTART == wifi_config_type) {
+      restart_flag = 2;
+    }
+    else if (WIFI_SMARTCONFIG == wifi_config_type) {
+      AddLog_P(LOG_LEVEL_INFO, S_LOG_WIFI, PSTR(D_WCFG_1_SMARTCONFIG " " D_ACTIVE_FOR_3_MINUTES));
+      WiFi.beginSmartConfig();
+    }
+    else if (WIFI_WPSCONFIG == wifi_config_type) {
+      if (WifiWpsConfigBegin()) {
+        AddLog_P(LOG_LEVEL_INFO, S_LOG_WIFI, PSTR(D_WCFG_3_WPSCONFIG " " D_ACTIVE_FOR_3_MINUTES));
+      } else {
+        AddLog_P(LOG_LEVEL_INFO, S_LOG_WIFI, PSTR(D_WCFG_3_WPSCONFIG " " D_FAILED_TO_START));
+        wifi_config_counter = 3;
+      }
+    }
+    AddLog_P(LOG_LEVEL_INFO, S_LOG_WIFI, PSTR(D_WCFG_2_WIFIMANAGER " " D_ACTIVE_FOR_3_MINUTES));
+    WifiManagerBegin();
+  }
+}
+
+
+
 void AddLog_P(byte loglevel, const char *formatP)
 {
   snprintf_P(log_data, sizeof(log_data), formatP);

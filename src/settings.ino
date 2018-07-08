@@ -93,6 +93,67 @@ void SettingsSaveAll(){
 	SettingsSave();
 }
 
+
+void WifiCheck(uint8_t param)
+{
+  wifi_counter--;
+  switch (param) {
+  case WIFI_SMARTCONFIG:
+  case WIFI_MANAGER:
+  case WIFI_WPSCONFIG:
+    WifiConfig(param);
+    break;
+  default:
+    if (wifi_config_counter) {
+      wifi_config_counter--;
+      wifi_counter = wifi_config_counter +5;
+      if (wifi_config_counter) {
+        // if ((WIFI_SMARTCONFIG == wifi_config_type) && WiFi.smartConfigDone()) {
+        //   wifi_config_counter = 0;
+        // }
+        // if ((WIFI_WPSCONFIG == wifi_config_type) && WifiWpsConfigDone()) {
+        //   wifi_config_counter = 0;
+        // }
+        if (!wifi_config_counter) {
+          if (strlen(WiFi.SSID().c_str())) {
+            strlcpy(Settings.sta_ssid[0], WiFi.SSID().c_str(), sizeof(Settings.sta_ssid[0]));
+          }
+          if (strlen(WiFi.psk().c_str())) {
+            strlcpy(Settings.sta_pwd[0], WiFi.psk().c_str(), sizeof(Settings.sta_pwd[0]));
+          }
+          Settings.sta_active = 0;
+          snprintf_P(log_data, sizeof(log_data), PSTR(D_LOG_WIFI D_WCFG_1_SMARTCONFIG D_CMND_SSID "1 %s"), Settings.sta_ssid[0]);
+          AddLog(LOG_LEVEL_INFO);
+        }
+      }
+      if (!wifi_config_counter) {
+        if (WIFI_SMARTCONFIG == wifi_config_type) {
+          WiFi.stopSmartConfig();
+        }
+        SettingsSdkErase();
+        restart_flag = 2;
+      }
+    } else {
+      if (wifi_counter <= 0) {
+        AddLog_P(LOG_LEVEL_DEBUG_MORE, S_LOG_WIFI, PSTR(D_CHECKING_CONNECTION));
+        wifi_counter = WIFI_CHECK_SEC;
+        WifiCheckIp();
+      }
+      if ((WL_CONNECTED == WiFi.status()) && (static_cast<uint32_t>(WiFi.localIP()) != 0) && !wifi_config_type) {
+        if (!mdns_begun) {
+          mdns_begun = MDNS.begin(my_hostname);
+          snprintf_P(log_data, sizeof(log_data), PSTR(D_LOG_MDNS "%s"), (mdns_begun) ? D_INITIALIZED : D_FAILED);
+          AddLog(LOG_LEVEL_INFO);
+        }
+          StartWebserver(WiFi.localIP());
+          MDNS.addService("http", "tcp", 80);
+      } else {
+        mdns_begun = false;
+      }
+    }
+  }
+}
+
 /*********************************************************************************************\
  * Config Save - Save parameters to Flash ONLY if any parameter has changed
 \*********************************************************************************************/
@@ -191,4 +252,5 @@ void SettingsSdkErase()
 	SettingsEraseConfig();
 	delay(1000);
 }
+
 /********************************************************************************************/

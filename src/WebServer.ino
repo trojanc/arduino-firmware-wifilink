@@ -213,6 +213,7 @@ const char HTTP_MSG_RSTRT[] PROGMEM =
 const char HDR_CTYPE_HTML[] PROGMEM = "text/html";
 
 
+ESP8266WebServer *WebServer;    //server UI
 uint8_t upload_error = 0;
 uint8_t upload_file_type;
 uint8_t *settings_new = NULL;
@@ -224,17 +225,17 @@ uint8_t config_xor_on_set = CONFIG_FILE_XOR;
 // Helper function to avoid code duplication (saves 4k Flash)
 static void WebGetArg(const char* arg, char* out, size_t max)
 {
-  String s = server.arg(arg);
+  String s = WebServer->arg(arg);
   strncpy(out, s.c_str(), max);
   out[max-1] = '\0';  // Ensure terminating NUL
 }
 
 void SetHeader()
 {
-	server.sendHeader(F("Cache-Control"), F("no-cache, no-store, must-revalidate"));
-	server.sendHeader(F("Pragma"), F("no-cache"));
-	server.sendHeader(F("Expires"), F("-1"));
-	server.sendHeader(F("Access-Control-Allow-Origin"), F("*"));
+	WebServer->sendHeader(F("Cache-Control"), F("no-cache, no-store, must-revalidate"));
+	WebServer->sendHeader(F("Pragma"), F("no-cache"));
+	WebServer->sendHeader(F("Expires"), F("-1"));
+	WebServer->sendHeader(F("Access-Control-Allow-Origin"), F("*"));
 }
 void ShowPage(String &page) {
   page.replace(F("{ha"), "Arduino Uno Wifi");
@@ -242,7 +243,7 @@ void ShowPage(String &page) {
   page += FPSTR(HTTP_END);
   page.replace(F("{mv"), FW_VERSION);
   SetHeader();
-  server.send(200, FPSTR(HDR_CTYPE_HTML), page);
+  WebServer->send(200, FPSTR(HDR_CTYPE_HTML), page);
 }
 
 void HandleRoot(){
@@ -405,7 +406,7 @@ void HandleUploadLoop()
     if (!upload_file_type) { Update.end(); }
     return;
   }
-  HTTPUpload& upload = server.upload();
+  HTTPUpload& upload = WebServer->upload();
 
   if (UPLOAD_FILE_START == upload.status) {
     restart_flag = 60;
@@ -826,35 +827,36 @@ void HandleAjaxConsoleRefresh()
   snprintf_P(mqtt_data, sizeof(mqtt_data), PSTR("<r><i>%d</i><j>%d</j><l>"), web_log_index, last_reset_web_log_flag);
   message.replace(F("}9"), mqtt_data);  // Save to load here
   message += F("</l></r>");
-  server.send(200, FPSTR(HDR_CTYPE_XML), message);
+  WebServer->send(200, FPSTR(HDR_CTYPE_XML), message);
 }
 
 
 void PollDnsWebserver()
 {
   // if (DnsServer) { DnsServer->processNextRequest(); }
-  server.handleClient();
+  WebServer->handleClient();
 }
 
-void initWebServer(){
+void StartWebserver(IPAddress ipweb){
 
-//	tot = WiFi.scanNetworks();
+  if (!WebServer) {
+    WebServer = new ESP8266WebServer(80);
+    WebServer->on("/", HandleRoot);
+    WebServer->on("/in", HandleInformation);
+    WebServer->on("/cn", HandleConfiguration);
+    WebServer->on("/up", HandleUpgradeFirmware);
+    WebServer->on("/u1", HandleUpgradeFirmwareStart);  // OTA
+    WebServer->on("/u2", HTTP_POST, HandleUploadDone, HandleUploadLoop);
+    WebServer->on("/mq", HandleMqttConfiguration);
+    WebServer->on("/sv", HandleSaveSettings);
+    WebServer->on("/w0", HandleWifiConfiguration);
+    WebServer->on("/cs", HandleConsole);
+    WebServer->on("/ax", HandleAjaxConsoleRefresh);
+    WebServer->onNotFound([](){
+      WebServer->send(404, "text/plain", "FileNotFound");
+    });
 
-	server.on("/", HandleRoot);
-	server.on("/in", HandleInformation);
-	server.on("/cn", HandleConfiguration);
-	server.on("/up", HandleUpgradeFirmware);
-  server.on("/u1", HandleUpgradeFirmwareStart);  // OTA
-  server.on("/u2", HTTP_POST, HandleUploadDone, HandleUploadLoop);
-  server.on("/mq", HandleMqttConfiguration);
-  server.on("/sv", HandleSaveSettings);
-  server.on("/w0", HandleWifiConfiguration);
-  server.on("/cs", HandleConsole);
-  server.on("/ax", HandleAjaxConsoleRefresh);
-	server.onNotFound([](){
-		server.send(404, "text/plain", "FileNotFound");
-	});
-
-	server.begin();
+    WebServer->begin();
+  }
 	delay(5); // VB: exactly 5, no more or less, no yield()!
 }

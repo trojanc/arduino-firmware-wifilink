@@ -14,6 +14,13 @@ char my_hostname[33];                       // Composed Wifi hostname
 int tele_period = 0;                        // Tele period timer
 int status_update_timer = 0;                // Refresh initial status
 uint16_t mqtt_cmnd_publish = 0;             // ignore flag for publish command
+unsigned long state_loop_timer = 0;         // State loop timer
+int state = 0;                              // State per second flag
+int ota_state_flag = 0;                     // OTA state flag
+int ota_result = 0;                         // OTA result
+int blinks = 201;                           // Number of LED blinks
+boolean mdns_begun = false;
+
 
 WiFiClient EspClient;                     // Wifi Client
 
@@ -21,7 +28,6 @@ int ledState = LOW;             // used to set the LED state
 long previousMillis = 0;        // will store last time LED was updated
 long ap_interval = 50;         //blink interval in ap mode
 
-ESP8266WebServer server(80);    //server UI
 
 void setup() {
   delay(10);
@@ -55,12 +61,14 @@ void setup() {
   SettingsLoad();
   initMDNS();
   CommunicationLogic.begin();
-  SPIFFS.begin();
   setupWifi();
-  initWebServer();                 //UI begin
 }
 
 void loop() {
+
+  MqttLoop();
+
+  if (millis() >= state_loop_timer) StateLoop();
 
   ArduinoOTA.handle();
 //  CommunicationLogic.handle();
@@ -72,6 +80,175 @@ void loop() {
   delay(0);
 }
 
+
+/*********************************************************************************************\
+ * State loop
+\*********************************************************************************************/
+
+void StateLoop()
+{
+  state_loop_timer = millis() + (1000 / STATES);
+  state++;
+
+/*-------------------------------------------------------------------------------------------*\
+ * Every second
+\*-------------------------------------------------------------------------------------------*/
+
+  if (STATES == state) {
+    state = 0;
+    // PerformEverySecond();
+  }
+
+/*-------------------------------------------------------------------------------------------*\
+ * Every 0.1 second
+\*-------------------------------------------------------------------------------------------*/
+
+  if (!(state % (STATES/10))) {
+    if (mqtt_cmnd_publish) mqtt_cmnd_publish--;  // Clean up
+  }
+
+/*-------------------------------------------------------------------------------------------*\
+ * Every 0.05 second
+\*-------------------------------------------------------------------------------------------*/
+
+  // ButtonHandler();
+  // SwitchHandler();
+
+  // XdrvCall(FUNC_EVERY_50_MSECOND);
+  // XsnsCall(FUNC_EVERY_50_MSECOND);
+
+/*-------------------------------------------------------------------------------------------*\
+ * Every 0.2 second
+\*-------------------------------------------------------------------------------------------*/
+
+  if (!(state % ((STATES/10)*2))) {
+    if (blinks || restart_flag || ota_state_flag) {
+      if (restart_flag || ota_state_flag) {
+        blinkstate = 1;   // Stay lit
+      } else {
+        blinkstate ^= 1;  // Blink
+      }
+      if ((!(Settings.ledstate &0x08)) && ((Settings.ledstate &0x06) || (blinks > 200) || (blinkstate))) {
+        SetLedPower(blinkstate);
+      }
+      if (!blinkstate) {
+        blinks--;
+        if (200 == blinks) blinks = 0;
+      }
+    } else {
+      if (Settings.ledstate &1) {
+        SetLedPower(tstate);
+      }
+    }
+  }
+
+/*-------------------------------------------------------------------------------------------*\
+ * Every second at 0.2 second interval
+\*-------------------------------------------------------------------------------------------*/
+
+  switch (state) {
+  case (STATES/10)*2:
+    // if (ota_state_flag) {
+    //   ota_state_flag--;
+    //   if (2 == ota_state_flag) {
+    //     ota_url = Settings.ota_url;
+    //     RtcSettings.ota_loader = 0;  // Try requested image first
+    //     ota_retry_counter = OTA_ATTEMPTS;
+    //     ESPhttpUpdate.rebootOnUpdate(false);
+    //     SettingsSave(1);  // Free flash for OTA update
+    //   }
+    //   if (ota_state_flag <= 0) {
+      //  StopWebserver();
+      //   ota_state_flag = 92;
+      //   ota_result = 0;
+      //   ota_retry_counter--;
+      //   if (ota_retry_counter) {
+          // strlcpy(mqtt_data, GetOtaUrl(log_data, sizeof(log_data)), sizeof(mqtt_data));
+          // if (RtcSettings.ota_loader) {
+          //   char *pch = strrchr(mqtt_data, '-');  // Change from filename-DE.bin into filename-minimal.bin
+          //   char *ech = strrchr(mqtt_data, '.');  // Change from filename.bin into filename-minimal.bin
+          //   if (!pch) pch = ech;
+          //   if (pch) {
+          //     mqtt_data[pch - mqtt_data] = '\0';
+          //     char *ech = strrchr(Settings.ota_url, '.');  // Change from filename.bin into filename-minimal.bin
+          //     snprintf_P(mqtt_data, sizeof(mqtt_data), PSTR("%s-" D_JSON_MINIMAL "%s"), mqtt_data, ech);  // Minimal filename must be filename-minimal
+          //   }
+          // }
+          // snprintf_P(log_data, sizeof(log_data), PSTR(D_LOG_UPLOAD "%s"), mqtt_data);
+          // AddLog(LOG_LEVEL_DEBUG);
+          // ota_result = (HTTP_UPDATE_FAILED != ESPhttpUpdate.update(mqtt_data));
+          // if (!ota_result) {
+          //   int ota_error = ESPhttpUpdate.getLastError();
+//            snprintf_P(log_data, sizeof(log_data), PSTR(D_LOG_UPLOAD "Ota error %d"), ota_error);
+//            AddLog(LOG_LEVEL_DEBUG);
+      //       ota_state_flag = 2;    // Upgrade failed - retry
+      //     }
+      //   }
+      // }
+      // if (90 == ota_state_flag) {  // Allow MQTT to reconnect
+      //   ota_state_flag = 0;
+      //   if (ota_result) {
+      //     SetFlashModeDout();      // Force DOUT for both ESP8266 and ESP8285
+      //     snprintf_P(mqtt_data, sizeof(mqtt_data), PSTR(D_JSON_SUCCESSFUL ". " D_JSON_RESTARTING));
+      //   } else {
+      //     snprintf_P(mqtt_data, sizeof(mqtt_data), PSTR(D_JSON_FAILED " %s"), ESPhttpUpdate.getLastErrorString().c_str());
+      //   }
+      //   restart_flag = 2;          // Restart anyway to keep memory clean webserver
+      //   MqttPublishPrefixTopic_P(STAT, PSTR(D_CMND_UPGRADE));
+      // }
+    // }
+    break;
+  case (STATES/10)*4:
+    // if (MidnightNow()) CounterSaveState();
+    // if (save_data_counter && (backlog_pointer == backlog_index)) {
+    //   save_data_counter--;
+    //   if (save_data_counter <= 0) {
+    //     if (Settings.flag.save_state) {
+    //       power_t mask = POWER_MASK;
+    //       for (byte i = 0; i < MAX_PULSETIMERS; i++) {
+    //         if ((Settings.pulse_timer[i] > 0) && (Settings.pulse_timer[i] < 30)) {  // 3 seconds
+    //           mask &= ~(1 << i);
+    //         }
+    //       }
+    //       if (!((Settings.power &mask) == (power &mask))) {
+    //         Settings.power = power;
+    //       }
+    //     } else {
+    //       Settings.power = 0;
+    //     }
+    //     SettingsSave(0);
+    //     save_data_counter = Settings.save_data;
+    //   }
+    // }
+    if (restart_flag) {
+      if (213 == restart_flag) {
+        SettingsSdkErase();  // Erase flash SDK parameters
+        restart_flag = 2;
+      } else if (212 == restart_flag) {
+        SettingsErase(0);    // Erase all flash from program end to end of physical flash
+        restart_flag = 211;
+      }
+      if (211 == restart_flag) {
+        SettingsDefault();
+        restart_flag = 2;
+      }
+      SettingsSaveAll();
+      restart_flag--;
+      if (restart_flag <= 0) {
+        AddLog_P(LOG_LEVEL_INFO, PSTR(D_LOG_APPLICATION D_RESTARTING));
+        ESP.restart();
+      }
+    }
+    break;
+  case (STATES/10)*6:
+    WifiCheck(wifi_state_flag);
+    wifi_state_flag = WIFI_RESTART;
+    break;
+  case (STATES/10)*8:
+    if (WL_CONNECTED == WiFi.status()) MqttCheck();
+    break;
+  }
+}
 
 void MakeValidMqtt(byte option, char* str)
 {

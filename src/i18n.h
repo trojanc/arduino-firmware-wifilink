@@ -57,6 +57,8 @@
 #define D_RSLT_INFO "INFO"
 #define D_JSON_RESTARTREASON "RestartReason"
 
+#define D_ATTEMPTING_CONNECTION "Attempting connection..."
+#define D_CHECKING_CONNECTION "Checking connection..."
 #define D_BOOT_COUNT "Boot Count"
 #define D_RETRY_IN "Retry in"
 #define D_UNIT_SECOND "sec"
@@ -67,8 +69,10 @@
 #define D_CMND_HOSTNAME "Hostname"
   #define D_JSON_WEBSERVER_MODE "WebServerMode"
 #define D_JSON_BLOCKED_LOOP "Blocked Loop"
+#define D_INITIALIZED "Initialized"
 #define D_ADMIN "Admin"
 #define D_CONFIGURE_MQTT "Configure MQTT"
+#define D_FAILED "Failed"
 #define D_RSLT_RESULT "RESULT"
 #define D_LOG_RESULT "RSL: "       // Result
 #define D_LOG_APPLICATION "APP: "  // Application
@@ -77,10 +81,16 @@
 #define D_LOG_SERIAL "SER: "       // Serial
 #define D_LOG_HTTP "HTP: "         // HTTP webserver
 #define D_LOG_MQTT "MQT: "         // MQTT
+#define D_LOG_WIFI "WIF: "         // Wifi
+#define D_LOG_MDNS "DNS: "         // mDNS
 #define D_RECEIVED "Received"
 #define D_CONSOLE "Console"
 #define D_LWT "LWT"
 
+#define D_CMND_UPGRADE "Upgrade"
+#define D_JSON_SUCCESSFUL "Successful"
+#define D_JSON_RESTARTING "Restarting"
+#define D_JSON_FAILED "Failed"
 // "2017-03-07T11:08:02" - ISO8601:2004
 #define D_YEAR_MONTH_SEPARATOR "-"
 #define D_MONTH_DAY_SEPARATOR "-"
@@ -97,6 +107,7 @@ const char S_LWT[] PROGMEM = D_LWT;
 const char S_OFFLINE[] PROGMEM = D_OFFLINE;
 const char S_LOG_MQTT[] PROGMEM = D_LOG_MQTT;
 const char S_RSLT_RESULT[] PROGMEM = D_RSLT_RESULT;
+const char S_LOG_WIFI[] PROGMEM = D_LOG_WIFI;
 
 #define PRFX_MAX_STRING_LENGTH 5
   #define D_CMND "cmnd"
