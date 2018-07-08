@@ -24,7 +24,7 @@
 #warning **** user_config_override.h: Using Settings from this File ****
 // -- Master parameter control --------------------
 #undef  CFG_HOLDER
-#define CFG_HOLDER        0x20161213             // [Reset 1] Change this value to load SECTION1 configuration parameters to flash
+#define CFG_HOLDER        0x20161215             // [Reset 1] Change this value to load SECTION1 configuration parameters to flash
 
 // -- Setup your own Wifi settings  ---------------
 #undef STA_SSID1
@@ -39,6 +39,9 @@
 #undef STA_PASS2
 #define STA_PASS2              ""
 
+#undef TELE_PERIOD
+#define TELE_PERIOD 10
 
+#undef WEB_LOG_LEVEL
 #define WEB_LOG_LEVEL          LOG_LEVEL_DEBUG_MORE    // [WebLog] (LOG_LEVEL_NONE, LOG_LEVEL_ERROR, LOG_LEVEL_INFO, LOG_LEVEL_DEBUG, LOG_LEVEL_DEBUG_MORE)
 #endif //_USER_CONFIG_OVERRIDE_H_

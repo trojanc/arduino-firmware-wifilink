@@ -1,4 +1,6 @@
 
+byte oswatch_blocked_loop = 0;
+
 void AddLog_P(byte loglevel, const char *formatP)
 {
   snprintf_P(log_data, sizeof(log_data), formatP);
@@ -82,4 +84,15 @@ void GetLog(byte idx, char** entry_pp, size_t* len_p)
   }
   *entry_pp = entry_p;
   *len_p = len;
+}
+
+String GetResetReason()
+{
+  char buff[32];
+  if (oswatch_blocked_loop) {
+    strncpy_P(buff, PSTR(D_JSON_BLOCKED_LOOP), sizeof(buff));
+    return String(buff);
+  } else {
+    return ESP.getResetReason();
+  }
 }

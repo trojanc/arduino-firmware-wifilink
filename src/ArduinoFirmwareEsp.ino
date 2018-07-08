@@ -7,6 +7,15 @@ byte reset_web_log_flag = 0;                // Reset web console log
 char log_data[LOGSZ];                       // Logging
 char web_log[WEB_LOG_SIZE] = {'\0'};        // Web log buffer
 char mqtt_data[MESSZ];                      // MQTT publish buffer and web page ajax buffer
+char mqtt_client[33];                       // Composed MQTT Clientname
+char mqtt_topic[33];                        // Composed MQTT topic
+char my_version[33];                        // Composed version string
+char my_hostname[33];                       // Composed Wifi hostname
+int tele_period = 0;                        // Tele period timer
+int status_update_timer = 0;                // Refresh initial status
+uint16_t mqtt_cmnd_publish = 0;             // ignore flag for publish command
+
+WiFiClient EspClient;                     // Wifi Client
 
 int ledState = LOW;             // used to set the LED state
 long previousMillis = 0;        // will store last time LED was updated
@@ -15,6 +24,31 @@ long ap_interval = 50;         //blink interval in ap mode
 ESP8266WebServer server(80);    //server UI
 
 void setup() {
+  delay(10);
+  
+  byte idx;
+  snprintf_P(my_version, sizeof(my_version), PSTR("%d.%d.%d"), VERSION >> 24 & 0xff, VERSION >> 16 & 0xff, VERSION >> 8 & 0xff);
+  if (VERSION & 0x1f) {
+    idx = strlen(my_version);
+    my_version[idx] = 96 + (VERSION & 0x1f);
+    my_version[idx +1] = 0;
+  }
+
+  Settings.bootcount++;
+  snprintf_P(log_data, sizeof(log_data), PSTR(D_LOG_APPLICATION D_BOOT_COUNT " %d"), Settings.bootcount);
+  AddLog(LOG_LEVEL_DEBUG);
+
+  Format(mqtt_client, Settings.mqtt_client, sizeof(mqtt_client));
+  Format(mqtt_topic, Settings.mqtt_topic, sizeof(mqtt_topic));
+
+  if (strstr(Settings.hostname, "%")) {
+    strlcpy(Settings.hostname, WIFI_HOSTNAME, sizeof(Settings.hostname));
+    snprintf_P(my_hostname, sizeof(my_hostname)-1, Settings.hostname, mqtt_topic, ESP.getChipId() & 0x1FFF);
+  } else {
+    snprintf_P(my_hostname, sizeof(my_hostname)-1, Settings.hostname);
+  }
+
+
   _setup_dfu();
   pinMode(WIFI_LED, OUTPUT);      //initialize wifi LED
   ArduinoOTA.begin();             //OTA ESP
@@ -98,31 +132,33 @@ char* Format(char* output, const char* input, int size)
 }
 
 
-// void MqttPublishPrefixTopic_P(uint8_t prefix, const char* subtopic, boolean retained)
-// {
-// /* prefix 0 = cmnd using subtopic
-//  * prefix 1 = stat using subtopic
-//  * prefix 2 = tele using subtopic
-//  * prefix 4 = cmnd using subtopic or RESULT
-//  * prefix 5 = stat using subtopic or RESULT
-//  * prefix 6 = tele using subtopic or RESULT
-//  */
-//   char romram[33];
-//   char stopic[TOPSZ];
+void GetTopic_P(char *stopic, byte prefix, char *topic, const char* subtopic)
+{
+  /* prefix 0 = Cmnd
+     prefix 1 = Stat
+     prefix 2 = Tele
+  */
+  char romram[CMDSZ];
+  String fulltopic;
 
-//   snprintf_P(romram, sizeof(romram), ((prefix > 3) && !Settings.flag.mqtt_response) ? S_RSLT_RESULT : subtopic);
-//   for (byte i = 0; i < strlen(romram); i++) {
-//     romram[i] = toupper(romram[i]);
-//   }
-//   prefix &= 3;
-//   GetTopic_P(stopic, prefix, mqtt_topic, romram);
-//   MqttPublish(stopic, retained);
-// }
+  snprintf_P(romram, sizeof(romram), subtopic);
 
-// void MqttPublishPrefixTopic_P(uint8_t prefix, const char* subtopic)
-// {
-//   MqttPublishPrefixTopic_P(prefix, subtopic, false);
-// }
+  fulltopic = Settings.mqtt_fulltopic;
+  if ((0 == prefix) && (-1 == fulltopic.indexOf(F(MQTT_TOKEN_PREFIX)))) {
+    fulltopic += F("/" MQTT_TOKEN_PREFIX);  // Need prefix for commands to handle mqtt topic loops
+  }
+  for (byte i = 0; i < 3; i++) {
+    if ('\0' == Settings.mqtt_prefix[i][0]) {
+      snprintf_P(Settings.mqtt_prefix[i], sizeof(Settings.mqtt_prefix[i]), kPrefixes[i]);
+    }
+  }
+  fulltopic.replace(F(MQTT_TOKEN_PREFIX), Settings.mqtt_prefix[prefix]);
+  fulltopic.replace(F(MQTT_TOKEN_TOPIC), topic);
+  fulltopic.replace(F("#"), "");
+  fulltopic.replace(F("//"), "/");
+  if (!fulltopic.endsWith("/")) fulltopic += "/";
+  snprintf_P(stopic, TOPSZ, PSTR("%s%s"), fulltopic.c_str(), romram);
+}
 
 void initMDNS(){
 

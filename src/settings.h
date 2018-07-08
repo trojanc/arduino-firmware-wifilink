@@ -33,6 +33,7 @@ typedef union {                            // Restricted by MISRA-C Rule 18.4 bu
   struct {
     uint32_t save_state : 1;
     uint32_t stop_flash_rotate : 1;
+    uint32_t mqtt_response : 1;
   };
 } SysBitfield;
 
@@ -41,7 +42,7 @@ struct SYSCFG {
   unsigned long save_flag;
   unsigned long version;
   unsigned long bootcount;
-  SysBitfield   flag;                      // 010 Add flag since 5.0.2
+  SysBitfield   flag;
   int16_t       save_data;
   char          sta_ssid[2][33];
   char          sta_pwd[2][65];
@@ -54,8 +55,11 @@ struct SYSCFG {
   char          mqtt_pwd[33];
   char          mqtt_topic[33];
   char          mqtt_fulltopic[100];
+  uint16_t      mqtt_retry;
+  char          mqtt_prefix[3][11];
   uint32_t      ip_address[4];
   byte          weblog_level;
+  uint16_t      tele_period;
 } Settings;
 
 

@@ -128,13 +128,18 @@ void SettingsDefaultSet2(){
 	strlcpy(Settings.hostname, WIFI_HOSTNAME, sizeof(Settings.hostname));
 
 	Settings.mqtt_port = MQTT_PORT;
+	Settings.mqtt_retry = MQTT_RETRY_SECS;
 	strlcpy(Settings.mqtt_host, MQTT_HOST, sizeof(Settings.mqtt_host));
 	strlcpy(Settings.mqtt_client, MQTT_CLIENT_ID, sizeof(Settings.mqtt_client));
 	strlcpy(Settings.mqtt_user, MQTT_USER, sizeof(Settings.mqtt_user));
 	strlcpy(Settings.mqtt_pwd, MQTT_PASS, sizeof(Settings.mqtt_pwd));
 	strlcpy(Settings.mqtt_topic, MQTT_TOPIC, sizeof(Settings.mqtt_topic));
+	strlcpy(Settings.mqtt_prefix[0], SUB_PREFIX, sizeof(Settings.mqtt_prefix[0]));
+	strlcpy(Settings.mqtt_prefix[1], PUB_PREFIX, sizeof(Settings.mqtt_prefix[1]));
+	strlcpy(Settings.mqtt_prefix[2], PUB_PREFIX2, sizeof(Settings.mqtt_prefix[2]));
 
 	Settings.weblog_level = WEB_LOG_LEVEL;
+	Settings.tele_period = TELE_PERIOD;
 }
 
 void SettingsLoad(){

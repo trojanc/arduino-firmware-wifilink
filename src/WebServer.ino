@@ -11,73 +11,6 @@
 #define STR(x) STR_HELPER(x)
 
 // TODO move to language file
-#define D_UPLOAD_ERR_1 "No file selected"
-#define D_UPLOAD_ERR_2 "Not enough space"
-#define D_UPLOAD_ERR_3 "Magic byte is not 0xE9"
-#define D_UPLOAD_ERR_4 "Program flash size is larger than real flash size"
-#define D_UPLOAD_ERR_5 "Upload buffer miscompare"
-#define D_UPLOAD_ERR_6 "Upload failed. Enable logging 3"
-#define D_UPLOAD_ERR_7 "Upload aborted"
-#define D_UPLOAD_ERR_8 "File invalid"
-#define D_UPLOAD_ERR_9 "File too large"
-#define D_UPLOAD "Upload"
-#define D_ENTER_COMMAND "Enter command"
-#define D_UPGRADE_STARTED "Upgrade started"
-#define D_RESTART_IN "Restart in"
-#define D_SECONDS "seconds"
-#define D_HTML_LANGUAGE "en"
-#define D_MQTT_PARAMETERS "MQTT parameters"
-#define D_MQTT_HOST "MQTT Host"
-#define D_MQTT_PORT "MQTT Port"
-#define D_MQTT_CLIENT "MQTT Client"
-#define D_MQTT_USER "MQTT User"
-#define D_MQTT_TOPIC "MQTT Topic"
-#define D_MQTT_GROUP_TOPIC "MQTT Group Topic"
-#define D_MQTT_FULL_TOPIC "MQTT Full Topic"
-#define D_WIFI_PARAMETERS "Wifi parameters"
-#define D_SAVE_CONFIGURATION "Save configuration"
-#define D_CONFIGURATION_SAVED "Configuration saved"
-#define D_CONFIGURATION "Configuration"
-#define D_SAVE "Save"
-#define D_CLIENT "Client"
-#define D_FULL_TOPIC "Full Topic"
-#define D_USER "User"
-#define D_PORT "Port"
-#define D_HOSTNAME "Hostname"
-#define D_FILE "File"
-#define D_HOST "Host"
-#define D_TOPIC "Topic"
-#define D_PASSWORD "Password"
-#define D_AP1_SSID "AP1 SSId"
-#define D_AP1_PASSWORD "AP1 Password"
-#define D_AP2_SSID "AP2 SSId"
-#define D_AP2_PASSWORD "AP2 Password"
-#define D_ASTERIX "********"
-#define D_SUCCESSFUL "Successful"
-#define D_RESTARTING "Restarting"
-#define D_FIRMWARE_UPGRADE "Firmware Upgrade"
-#define D_UPLOAD_DONE "Upload done"
-
-#define D_CONFIGURE_MQTT "Configure MQTT"
-#define D_LOG_UPLOAD "UPL: "       // Upload
-#define D_LOG_COMMAND "CMD: "      // Command
-#define D_LOG_SERIAL "SER: "       // Serial
-#define D_LOG_HTTP "HTP: "         // HTTP webserver
-#define D_RECEIVED "Received"
-#define D_CONSOLE "Console"
-
-// "2017-03-07T11:08:02" - ISO8601:2004
-#define D_YEAR_MONTH_SEPARATOR "-"
-#define D_MONTH_DAY_SEPARATOR "-"
-#define D_DATE_TIME_SEPARATOR "T"
-#define D_HOUR_MINUTE_SEPARATOR ":"
-#define D_MINUTE_SECOND_SEPARATOR ":"
-
-const char S_LOG_HTTP[] PROGMEM = D_LOG_HTTP;
-const char S_FIRMWARE_UPGRADE[] PROGMEM = D_FIRMWARE_UPGRADE;
-const char S_CONFIGURE_MQTT[] PROGMEM = D_CONFIGURE_MQTT;
-const char S_SAVE_CONFIGURATION[] PROGMEM = D_SAVE_CONFIGURATION;
-const char S_CONSOLE[] PROGMEM = D_CONSOLE;
 
 const char HDR_CTYPE_XML[] PROGMEM = "text/xml";
 
@@ -349,7 +282,7 @@ void HandleInformation(){
 //  func += F("}1 Uptime }2"); func += GetDateAndTime(DT_UPTIME);
 //  snprintf_P(stopic, sizeof(stopic), PSTR(" at %X"), GetSettingsAddress());
 //  func += F("}1" D_FLASH_WRITE_COUNT "}2"); func += String(Settings.save_flag); func += stopic;
-//  func += F("}1" D_BOOT_COUNT "}2"); func += String(Settings.bootcount);
+  func += F("}1" D_BOOT_COUNT "}2"); func += String(Settings.bootcount);
 //  func += F("}1" D_RESTART_REASON "}2"); func += GetResetReason();
 //  uint8_t maxfn = (devices_present > MAX_FRIENDLYNAMES) ? MAX_FRIENDLYNAMES : devices_present;
 //  for (byte i = 0; i < maxfn; i++) {
