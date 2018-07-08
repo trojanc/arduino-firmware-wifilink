@@ -2,6 +2,45 @@
 #define _SRC_I18N_H_
 
 
+// support.ino
+#define D_OSWATCH "osWatch"
+#define D_BLOCKED_LOOP "Blocked Loop"
+#define D_WPS_FAILED_WITH_STATUS "WPSconfig FAILED with status"
+#define D_ACTIVE_FOR_3_MINUTES "active for 3 minutes"
+#define D_FAILED_TO_START "failed to start"
+#define D_PATCH_ISSUE_2186 "Patch issue 2186"
+#define D_CONNECTING_TO_AP "Connecting to AP"
+#define D_IN_MODE "in mode"
+#define D_CONNECT_FAILED_NO_IP_ADDRESS "Connect failed as no IP address received"
+#define D_CONNECT_FAILED_AP_NOT_REACHED "Connect failed as AP cannot be reached"
+#define D_CONNECT_FAILED_WRONG_PASSWORD "Connect failed with AP incorrect password"
+#define D_CONNECT_FAILED_AP_TIMEOUT "Connect failed with AP timeout"
+#define D_ATTEMPTING_CONNECTION "Attempting connection..."
+#define D_CHECKING_CONNECTION "Checking connection..."
+#define D_QUERY_DONE "Query done. MQTT services found"
+#define D_MQTT_SERVICE_FOUND "MQTT service found on"
+#define D_FOUND_AT "found at"
+#define D_SYSLOG_HOST_NOT_FOUND "Syslog Host not found"
+
+// webserver.ino
+#define D_MINIMAL_FIRMWARE_PLEASE_UPGRADE "MINIMAL firmware - please upgrade"
+#define D_WEBSERVER_ACTIVE_ON "Web server active on"
+#define D_WITH_IP_ADDRESS "with IP address"
+#define D_WEBSERVER_STOPPED "Web server stopped"
+#define D_FILE_NOT_FOUND "File Not Found"
+#define D_REDIRECTED "Redirected to captive portal"
+#define D_WIFIMANAGER_SET_ACCESSPOINT_AND_STATION "Wifimanager set AccessPoint and keep Station"
+#define D_WIFIMANAGER_SET_ACCESSPOINT "Wifimanager set AccessPoint"
+#define D_TRYING_TO_CONNECT "Trying to connect device to network"
+
+#define WCFG_MAX_STRING_LENGTH 12
+#define D_WCFG_0_RESTART "Restart"
+#define D_WCFG_1_SMARTCONFIG "SmartConfig"
+#define D_WCFG_2_WIFIMANAGER "WifiManager"
+#define D_WCFG_3_WPSCONFIG "WPSConfig"
+#define D_WCFG_4_RETRY "Retry"
+#define D_WCFG_5_WAIT "Wait"
+
 #define D_UPLOAD_ERR_1 "No file selected"
 #define D_UPLOAD_ERR_2 "Not enough space"
 #define D_UPLOAD_ERR_3 "Magic byte is not 0xE9"
@@ -36,6 +75,8 @@
 #define D_PORT "Port"
 #define D_HOSTNAME "Hostname"
 #define D_CONNECTED "Connected"
+#define D_AS "as"
+#define D_SET_BAUDRATE_TO "Set Baudrate to"
 #define D_FILE "File"
 #define D_HOST "Host"
 #define D_TOPIC "Topic"
@@ -87,6 +128,7 @@
 #define D_CONSOLE "Console"
 #define D_LWT "LWT"
 
+#define D_CMND_SSID "SSId"
 #define D_CMND_UPGRADE "Upgrade"
 #define D_JSON_SUCCESSFUL "Successful"
 #define D_JSON_RESTARTING "Restarting"

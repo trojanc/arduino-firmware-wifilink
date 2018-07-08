@@ -12,10 +12,5 @@
 #include <ESP8266WebServer.h>
 
 #define TOPSZ                  100          // Max number of characters in topic string
-
-extern ESP8266WebServer server;
-extern String dhcp;
-extern String staticIP_param;
-extern String netmask_param;
-extern String gateway_param;
+extern ESP8266WebServer *WebServer;
 #endif /* SRC_FIRMWARE_H_ */

@@ -212,8 +212,12 @@ const char HTTP_MSG_RSTRT[] PROGMEM =
 
 const char HDR_CTYPE_HTML[] PROGMEM = "text/html";
 
+#define DNS_PORT 53
+enum HttpOptions {HTTP_OFF, HTTP_USER, HTTP_ADMIN, HTTP_MANAGER};
 
 ESP8266WebServer *WebServer;    //server UI
+DNSServer *DnsServer;
+
 uint8_t upload_error = 0;
 uint8_t upload_file_type;
 uint8_t *settings_new = NULL;
@@ -221,6 +225,7 @@ uint8_t upload_progress_dot_count;
 uint8_t config_block_count = 0;
 uint8_t config_xor_on = 0;
 uint8_t config_xor_on_set = CONFIG_FILE_XOR;
+uint8_t webserver_state = HTTP_OFF;
 
 // Helper function to avoid code duplication (saves 4k Flash)
 static void WebGetArg(const char* arg, char* out, size_t max)
@@ -507,7 +512,7 @@ void HandleUpgradeFirmwareStart()
   char svalue[100];
 
   AddLog_P(LOG_LEVEL_DEBUG, PSTR(D_LOG_HTTP D_UPGRADE_STARTED));
-//   WifiConfigCounter();
+  WifiConfigCounter();
 
   char tmp[100];
   String page = FPSTR(HTTP_HEAD);
@@ -529,7 +534,7 @@ void HandleUploadDone()
 
   char error[100];
 
-//   WifiConfigCounter();
+  WifiConfigCounter();
   restart_flag = 0;
 //   MqttRetryCounter(0);
 
@@ -833,8 +838,8 @@ void HandleAjaxConsoleRefresh()
 
 void PollDnsWebserver()
 {
-  // if (DnsServer) { DnsServer->processNextRequest(); }
-  WebServer->handleClient();
+  if (DnsServer) { DnsServer->processNextRequest(); }
+  if (WebServer) { WebServer->handleClient(); }
 }
 
 void StartWebserver(IPAddress ipweb){
@@ -859,4 +864,36 @@ void StartWebserver(IPAddress ipweb){
     WebServer->begin();
   }
 	delay(5); // VB: exactly 5, no more or less, no yield()!
+}
+
+void StopWebserver()
+{
+  if (webserver_state) {
+    WebServer->close();
+    webserver_state = HTTP_OFF;
+    AddLog_P(LOG_LEVEL_INFO, PSTR(D_LOG_HTTP D_WEBSERVER_STOPPED));
+  }
+}
+
+void WifiManagerBegin()
+{
+  // setup AP
+  if ((WL_CONNECTED == WiFi.status()) && (static_cast<uint32_t>(WiFi.localIP()) != 0)) {
+    WiFi.mode(WIFI_AP_STA);
+    AddLog_P(LOG_LEVEL_DEBUG, PSTR(D_LOG_WIFI D_WIFIMANAGER_SET_ACCESSPOINT_AND_STATION));
+  } else {
+    WiFi.mode(WIFI_AP);
+    AddLog_P(LOG_LEVEL_DEBUG, PSTR(D_LOG_WIFI D_WIFIMANAGER_SET_ACCESSPOINT));
+  }
+
+  StopWebserver();
+
+  DnsServer = new DNSServer();
+  WiFi.softAP(my_hostname);
+  delay(500); // Without delay I've seen the IP address blank
+  /* Setup the DNS server redirecting all the domains to the apIP */
+  DnsServer->setErrorReplyCode(DNSReplyCode::NoError);
+  DnsServer->start(DNS_PORT, "*", WiFi.softAPIP());
+
+  StartWebserver(WiFi.softAPIP());
 }

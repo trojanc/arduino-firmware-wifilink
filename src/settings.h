@@ -46,8 +46,12 @@ struct SYSCFG {
   int16_t       save_data;
   char          sta_ssid[2][33];
   char          sta_pwd[2][65];
+  uint8_t       sta_config;
+  byte          sta_active;
   char          hostname[33];
-  char          syslog_host[33];
+  uint8_t       baudrate;
+  char          serial_delimiter;
+  byte          seriallog_level;
   char          mqtt_host[33];
   uint16_t      mqtt_port;
   char          mqtt_client[33];
@@ -60,7 +64,7 @@ struct SYSCFG {
   uint32_t      ip_address[4];
   byte          weblog_level;
   uint16_t      tele_period;
-  byte          sta_active;
+  uint8_t       sleep;
 } Settings;
 
 

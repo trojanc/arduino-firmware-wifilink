@@ -1,5 +1,21 @@
 #include "ArduinoFirmwareEsp.h"
 
+#include <Ticker.h>                         // RTC, Energy, OSWatch
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#include "user_interface.h"
+
+// Function prototypes
+void WifiWpsStatusCallback(wps_cb_status status);
+
+#ifdef __cplusplus
+}
+#endif
+
+
 uint8_t stop_flash_rotate = 0;              // Allow flash configuration rotation
 int restart_flag = 0;                       // Sonoff restart flag
 byte web_log_index = 1;                     // Index in Web log buffer (should never be 0)
@@ -18,66 +34,77 @@ unsigned long state_loop_timer = 0;         // State loop timer
 int state = 0;                              // State per second flag
 int ota_state_flag = 0;                     // OTA state flag
 int ota_result = 0;                         // OTA result
-int blinks = 201;                           // Number of LED blinks
 boolean mdns_begun = false;
+byte seriallog_level;                       // Current copy of Settings.seriallog_level
+uint16_t seriallog_timer = 0;               // Timer to disable Seriallog
 
+uint8_t sleep;                              // Current copy of Settings.sleep
+int blinks = 201;                           // Number of LED blinks
+uint8_t blinkstate = 0;                     // LED state
+uint8_t led_inverted = 0;                   // LED inverted flag (1 = (0 = On, 1 = Off))
 
 WiFiClient EspClient;                     // Wifi Client
 
 int ledState = LOW;             // used to set the LED state
 long previousMillis = 0;        // will store last time LED was updated
 long ap_interval = 50;         //blink interval in ap mode
-
+int wifi_state_flag = WIFI_RESTART;         // Wifi state flag
 
 void setup() {
-  delay(10);
-  
-  byte idx;
-  snprintf_P(my_version, sizeof(my_version), PSTR("%d.%d.%d"), VERSION >> 24 & 0xff, VERSION >> 16 & 0xff, VERSION >> 8 & 0xff);
-  if (VERSION & 0x1f) {
-    idx = strlen(my_version);
-    my_version[idx] = 96 + (VERSION & 0x1f);
-    my_version[idx +1] = 0;
-  }
+	Serial.begin(APP_BAUDRATE);
+  	delay(10);
+ 	Serial.println();
+	seriallog_level = LOG_LEVEL_INFO;  // Allow specific serial messages until config loaded
 
-  Settings.bootcount++;
-  snprintf_P(log_data, sizeof(log_data), PSTR(D_LOG_APPLICATION D_BOOT_COUNT " %d"), Settings.bootcount);
-  AddLog(LOG_LEVEL_DEBUG);
+	byte idx;
+	snprintf_P(my_version, sizeof(my_version), PSTR("%d.%d.%d"), VERSION >> 24 & 0xff, VERSION >> 16 & 0xff, VERSION >> 8 & 0xff);
+	if (VERSION & 0x1f) {
+		idx = strlen(my_version);
+		my_version[idx] = 96 + (VERSION & 0x1f);
+		my_version[idx +1] = 0;
+	}
 
-  Format(mqtt_client, Settings.mqtt_client, sizeof(mqtt_client));
-  Format(mqtt_topic, Settings.mqtt_topic, sizeof(mqtt_topic));
+	SettingsLoad();
 
-  if (strstr(Settings.hostname, "%")) {
-    strlcpy(Settings.hostname, WIFI_HOSTNAME, sizeof(Settings.hostname));
-    snprintf_P(my_hostname, sizeof(my_hostname)-1, Settings.hostname, mqtt_topic, ESP.getChipId() & 0x1FFF);
-  } else {
-    snprintf_P(my_hostname, sizeof(my_hostname)-1, Settings.hostname);
-  }
+	OsWatchInit();
+	seriallog_level = Settings.seriallog_level;
+    seriallog_timer = SERIALLOG_TIMER;
+	sleep = Settings.sleep;
+	Settings.bootcount++;
+	snprintf_P(log_data, sizeof(log_data), PSTR(D_LOG_APPLICATION D_BOOT_COUNT " %d"), Settings.bootcount);
+	AddLog(LOG_LEVEL_DEBUG);
+
+	Format(mqtt_client, Settings.mqtt_client, sizeof(mqtt_client));
+	Format(mqtt_topic, Settings.mqtt_topic, sizeof(mqtt_topic));
+
+	if (strstr(Settings.hostname, "%")) {
+	strlcpy(Settings.hostname, WIFI_HOSTNAME, sizeof(Settings.hostname));
+	snprintf_P(my_hostname, sizeof(my_hostname)-1, Settings.hostname, mqtt_topic, ESP.getChipId() & 0x1FFF);
+	} else {
+	snprintf_P(my_hostname, sizeof(my_hostname)-1, Settings.hostname);
+	}
 
 
-  _setup_dfu();
-  pinMode(WIFI_LED, OUTPUT);      //initialize wifi LED
-  ArduinoOTA.begin();             //OTA ESP
-  SettingsLoad();
-  initMDNS();
-  CommunicationLogic.begin();
-  setupWifi();
+	// _setup_dfu();
+	pinMode(WIFI_LED, OUTPUT);      //initialize wifi LED
+	ArduinoOTA.begin();             //OTA ESP
+	//   CommunicationLogic.begin();
 }
 
 void loop() {
 
+  // XdrvCall(FUNC_LOOP);
   MqttLoop();
 
   if (millis() >= state_loop_timer) StateLoop();
-
-  ArduinoOTA.handle();
 //  CommunicationLogic.handle();
   PollDnsWebserver();
-//  wifiLed();
   // _handle_Mcu_OTA();
 
+
+  ArduinoOTA.handle();
   //  yield();     // yield == delay(0), delay contains yield, auto yield in loop
-  delay(0);
+  delay(sleep);
 }
 
 
@@ -128,16 +155,12 @@ void StateLoop()
       } else {
         blinkstate ^= 1;  // Blink
       }
-      if ((!(Settings.ledstate &0x08)) && ((Settings.ledstate &0x06) || (blinks > 200) || (blinkstate))) {
+      if ((blinks > 200) || (blinkstate)) {
         SetLedPower(blinkstate);
       }
       if (!blinkstate) {
         blinks--;
         if (200 == blinks) blinks = 0;
-      }
-    } else {
-      if (Settings.ledstate &1) {
-        SetLedPower(tstate);
       }
     }
   }
@@ -249,6 +272,11 @@ void StateLoop()
     break;
   }
 }
+void SetLedPower(uint8_t state)
+{
+  if (state) state = 1;
+  digitalWrite(WIFI_LED, (bitRead(led_inverted, 0)) ? !state : state);
+}
 
 void MakeValidMqtt(byte option, char* str)
 {
@@ -337,22 +365,6 @@ void GetTopic_P(char *stopic, byte prefix, char *topic, const char* subtopic)
   snprintf_P(stopic, TOPSZ, PSTR("%s%s"), fulltopic.c_str(), romram);
 }
 
-void initMDNS(){
-
-  MDNS.begin(Settings.hostname);
-  MDNS.setInstanceName(Settings.hostname);
-  MDNS.addServiceTxt("arduino", "tcp", "fw_name", FW_NAME);
-  MDNS.addServiceTxt("arduino", "tcp", "fw_version", FW_VERSION);
-  MDNS.addService("http", "tcp", 80);
-
-}
-
-
-void setupWifi(){
-  WiFi.hostname(Settings.hostname);
-	WiFi.begin(Settings.sta_ssid[0], Settings.sta_pwd[0]);
-}
-
 struct dfu_data *global_dfu;
 struct dfu_binary_file *global_binary_file;
 
@@ -378,7 +390,7 @@ global_dfu = dfu_init(&esp8266_serial_arduino_unowifi_interface_ops,
     return -1;
   }
 
-  global_binary_file = dfu_binary_file_start_rx(&dfu_rx_method_http_arduino, global_dfu, &server);
+  global_binary_file = dfu_binary_file_start_rx(&dfu_rx_method_http_arduino, global_dfu, WebServer);
   if (!global_binary_file) {
     return -1;
   }

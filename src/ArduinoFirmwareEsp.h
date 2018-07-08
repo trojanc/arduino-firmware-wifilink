@@ -30,6 +30,7 @@ enum TopicOptions { CMND, STAT, TELE, nu1, RESULT_OR_CMND, RESULT_OR_STAT, RESUL
 enum WifiConfigOptions {WIFI_RESTART, WIFI_SMARTCONFIG, WIFI_MANAGER, WIFI_WPSCONFIG, WIFI_RETRY, WIFI_WAIT, MAX_WIFI_OPTION};
 
 
+#define WIFI_LED 14
 #define CONFIG_FILE_SIGN       0xA5         // Configuration file signature
 #define CONFIG_FILE_XOR        0x5A         // Configuration file xor (0 = No Xor)
 #define LOGSZ                  512          // Max number of characters in log
@@ -41,19 +42,11 @@ enum WifiConfigOptions {WIFI_RESTART, WIFI_SMARTCONFIG, WIFI_MANAGER, WIFI_WPSCO
 #define MQTT_RETRY_SECS        10           // Minimum seconds to retry MQTT connection
 #define STATES                 20           // State loops per second
 
+#define SERIALLOG_TIMER        600          // Seconds to disable SerialLog
 #define MQTT_TOKEN_PREFIX      "%prefix%"   // To be substituted by mqtt_prefix[x]
 #define MQTT_TOKEN_TOPIC       "%topic%"    // To be substituted by mqtt_topic, mqtt_grptopic, mqtt_buttontopic, mqtt_switchtopic
 
 // Functions
-
-
-void initMDNS(void);
-
-void initHostname(void);
-
-void wifiLed(void);
-
-void setWiFiConfig(void);
 
 #include <Hash.h>
 #include <ESP8266WebServer.h>
